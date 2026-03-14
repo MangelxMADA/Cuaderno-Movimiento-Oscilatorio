@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oscilador Armónico Simple - Simulación Interactiva</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* =========================================
+           🌌 ESTILOS BASE Y VARIABLES
+           ========================================= */
+        :root {
+            --glass-bg: rgba(20, 25, 35, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --primary-color: #00ffcc;
+            --secondary-color: #ff007f;
+            --text-main: #f0f0f0;
+            --text-muted: #a0a0b0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #0f0f1a;
+            color: var(--text-main);
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        /* 🌠 Fondo Aurora Animado */
+        .aurora-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(45deg, #0a0a2a, #1a0b2e, #0f2027);
+            z-index: -2;
+        }
+
+        .aurora-bg::after {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 50% 50%, rgba(0, 255, 204, 0.15), transparent 60%),
+                radial-gradient(circle at 80% 20%, rgba(255, 0, 127, 0.15), transparent 50%);
+            animation: aurora-shift 15s ease-in-out infinite alternate;
+            z-index: -1;
+            filter: blur(60px);
+        }
+
+        @keyframes aurora-shift {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            100% {
+                transform: translate(5%, 10%) scale(1.1);
+            }
+        }
+
+        /* =========================================
+           📐 LAYOUT PRINCIPAL (Glassmorphism)
+           ========================================= */
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            width: 100%;
+            max-width: 1400px;
+            height: 90vh;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: var(--glass-shadow);
+            padding: 20px;
+        }
+
+        /* Responsive: apilar en móviles */
+        @media (max-width: 900px) {
+            .app-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 50vh auto;
+                height: auto;
+            }
+
+            body {
+                overflow-y: auto;
+            }
+        }
+
+        /* =========================================
+           🎨 ÁREA DEL CANVAS (Gráfica)
+           ========================================= */
+        .canvas-wrapper {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            background: rgba(10, 15, 25, 0.7);
+            border: 1px solid var(--glass-border);
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+            display: block;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        /* Controles sobre el canvas (Estilo GeoGebra) */
+        .canvas-toolbar {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 8px;
+        }
+
+        .tool-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            width: 36px;
+            height: 36px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tool-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--primary-color);
+        }
+
+        .tool-btn:active {
+            transform: scale(0.9);
+        }
+
+        /* =========================================
+           🎛️ PANEL DE CONTROLES
+           ========================================= */
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .header-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            text-align: center;
+            color: var(--primary-color);
+        }
+
+        /* Contenedor de la fórmula matemática */
+        .math-container {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 1.2rem;
+            border: 1px solid rgba(0, 255, 204, 0.2);
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.05);
+        }
+
+        /* 🎚️ Sliders personalizados */
+        .control-group {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        .val-badge {
+            background: rgba(0, 255, 204, 0.2);
+            color: var(--primary-color);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-family: monospace;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            height: 6px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 0 10px var(--primary-color);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* 🔘 Toggle Switches (Interruptores Neumorphism/Glass) */
+        .toggle-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider-toggle {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: .4s;
+            border-radius: 34px;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .slider-toggle:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+        }
+
+        input:checked+.slider-toggle {
+            background-color: var(--secondary-color);
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
+        }
+
+        input:checked+.slider-toggle:before {
+            transform: translateX(24px);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="aurora-bg"></div>
+
+    <main class="app-container">
+
+        <div class="canvas-wrapper" id="canvasContainer">
+            <canvas id="simCanvas"></canvas>
+
+            <div class="canvas-toolbar">
+                <button class="tool-btn" id="btnZoomIn" title="Acercar"><i data-lucide="zoom-in"></i></button>
+                <button class="tool-btn" id="btnZoomOut" title="Alejar"><i data-lucide="zoom-out"></i></button>
+                <button class="tool-btn" id="btnReset" title="Restablecer Vista"><i data-lucide="scan"></i></button>
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            <h1 class="header-title">Movimiento Armónico</h1>
+
+            <div class="math-container" id="mathFormula"></div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Amplitud (A)</span>
+                    <span class="val-badge" id="valA">2.00</span>
+                </div>
+                <input type="range" id="sliderA" min="0.1" max="5" step="0.1" value="2">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Frec. Angular (ω)</span>
+                    <span class="val-badge" id="valW">1.00 rad/s</span>
+                </div>
+                <input type="range" id="sliderW" min="0.1" max="5" step="0.1" value="1">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Fase Inicial (α)</span>
+                    <span class="val-badge" id="valAlpha">0.00 rad</span>
+                </div>
+                <input type="range" id="sliderAlpha" min="-3.14" max="3.14" step="0.1" value="0">
+            </div>
+
+            <div class="toggle-group">
+                <span><i data-lucide="activity" style="vertical-align: middle; margin-right: 8px;"></i> Trazar
+                    Gráfica</span>
+                <label class="switch">
+                    <input type="checkbox" id="toggleGraph" checked>
+                    <span class="slider-toggle"></span>
+                </label>
+            </div>
+
+            <div class="toggle-group">
+                <span><i data-lucide="play" style="vertical-align: middle; margin-right: 8px;"></i> Animación</span>
+                <label class="switch">
+                    <input type="checkbox" id="togglePlay" checked>
+                    <span class="slider-toggle"></span>
+                </label>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // Inicializar Iconos Lucide
+        lucide.createIcons();
+
+        // Renderizar Ecuación con KaTeX 🧮
+        const renderMath = () => {
+            const mathEl = document.getElementById('mathFormula');
+            katex.render("x(t) = A \\cdot \\sin(\\omega \\cdot t + \\alpha)", mathEl, {
+                throwOnError: false,
+                displayMode: true
+            });
+        };
+        renderMath();
+
+        // 📦 Estado Global de la Simulación
+        const state = {
+            A: 2,           // Amplitud
+            omega: 1,       // Frecuencia angular
+            alpha: 0,       // Fase inicial
+            time: 0,        // Tiempo (Eje X en la gráfica)
+            isPlaying: true,// Estado de animación
+            showGraph: true,// Mostrar la onda
+
+            // 🗺️ Variables de la cámara (Plano Cartesiano)
+            scale: 50,      // Píxeles por unidad
+            offsetX: 0,     // Desplazamiento en X (Centro del plano)
+            offsetY: 0,     // Desplazamiento en Y (Centro del plano)
+            isDragging: false,
+            lastMouseX: 0,
+            lastMouseY: 0
+        };
+
+        // 🎨 Referencias al DOM
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d', { alpha: false }); // Optimización
+        const container = document.getElementById('canvasContainer');
+
+        // Inputs
+        const ui = {
+            A: document.getElementById('sliderA'), valA: document.getElementById('valA'),
+            W: document.getElementById('sliderW'), valW: document.getElementById('valW'),
+            Alpha: document.getElementById('sliderAlpha'), valAlpha: document.getElementById('valAlpha'),
+            TGraph: document.getElementById('toggleGraph'),
+            TPlay: document.getElementById('togglePlay')
+        };
+
+        // 📐 Ajustar resolución del Canvas (High DPI / Retina Display support)
+        function resizeCanvas() {
+            const rect = container.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+
+            // Normalizar el CSS
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
+
+            ctx.scale(dpr, dpr);
+
+            // Centrar el plano (El tiempo empieza en la izquierda, Y en el centro)
+            if (!state.isDragging && state.time === 0) {
+                state.offsetX = rect.width * 0.1; // 10% margen izquierdo
+                state.offsetY = rect.height / 2;
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        // Usar ResizeObserver para detectar cambios en el contenedor flex/grid
+        new ResizeObserver(resizeCanvas).observe(container);
+
+        // 🎧 Listeners para la UI
+        ui.A.addEventListener('input', (e) => { state.A = parseFloat(e.target.value); ui.valA.innerText = state.A.toFixed(2); });
+        ui.W.addEventListener('input', (e) => { state.omega = parseFloat(e.target.value); ui.valW.innerText = state.omega.toFixed(2) + " rad/s"; });
+        ui.Alpha.addEventListener('input', (e) => { state.alpha = parseFloat(e.target.value); ui.valAlpha.innerText = state.alpha.toFixed(2) + " rad"; });
+        ui.TGraph.addEventListener('change', (e) => { state.showGraph = e.target.checked; });
+        ui.TPlay.addEventListener('change', (e) => { state.isPlaying = e.target.checked; });
+
+        // 🖱️ Interacciones del Canvas (Drag & Drop / GeoGebra Style)
+        canvas.addEventListener('mousedown', (e) => {
+            state.isDragging = true;
+            state.lastMouseX = e.clientX;
+            state.lastMouseY = e.clientY;
+        });
+
+        window.addEventListener('mouseup', () => { state.isDragging = false; });
+
+        window.addEventListener('mousemove', (e) => {
+            if (state.isDragging) {
+                const dx = e.clientX - state.lastMouseX;
+                const dy = e.clientY - state.lastMouseY;
+                state.offsetX += dx;
+                state.offsetY += dy;
+                state.lastMouseX = e.clientX;
+                state.lastMouseY = e.clientY;
+            }
+        });
+
+        // 🛞 Zoom con la rueda del ratón
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+
+            // Matemáticas para hacer zoom hacia el puntero
+            const mathX = (mouseX - state.offsetX) / state.scale;
+            const mathY = (mouseY - state.offsetY) / state.scale;
+
+            state.scale *= zoomFactor;
+
+            // Limitar el zoom
+            state.scale = Math.max(10, Math.min(state.scale, 300));
+
+            state.offsetX = mouseX - mathX * state.scale;
+            state.offsetY = mouseY - mathY * state.scale;
+        }, { passive: false });
+
+        // 🧰 Botones de la Toolbar
+        document.getElementById('btnZoomIn').addEventListener('click', () => state.scale *= 1.2);
+        document.getElementById('btnZoomOut').addEventListener('click', () => state.scale *= 0.8);
+        document.getElementById('btnReset').addEventListener('click', () => {
+            const rect = container.getBoundingClientRect();
+            state.scale = 50;
+            state.offsetX = rect.width * 0.1;
+            state.offsetY = rect.height / 2;
+        });
+
+        // 📏 DIBUJAR EL PAPEL MILIMETRADO (GeoGebra Style)
+        function drawGrid(width, height) {
+            ctx.beginPath();
+
+            // Calcular límites en coordenadas matemáticas
+            const left = -state.offsetX / state.scale;
+            const right = (width - state.offsetX) / state.scale;
+            const top = -state.offsetY / state.scale;
+            const bottom = (height - state.offsetY) / state.scale;
+
+            // Determinar el paso de la cuadrícula basado en el zoom
+            let majorStep = 1;
+            if (state.scale > 100) majorStep = 0.5;
+            if (state.scale < 25) majorStep = 2;
+            const minorStep = majorStep / 5; // 5 subdivisiones
+
+            // Función interna para dibujar líneas
+            const drawLines = (step, color, lineWidth) => {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = lineWidth;
+                ctx.beginPath();
+
+                // Líneas Verticales
+                const startX = Math.floor(left / step) * step;
+                for (let x = startX; x <= right; x += step) {
+                    const screenX = state.offsetX + x * state.scale;
+                    ctx.moveTo(screenX, 0); ctx.lineTo(screenX, height);
+                }
+
+                // Líneas Horizontales
+                const startY = Math.floor(top / step) * step;
+                for (let y = startY; y <= bottom; y += step) {
+                    const screenY = state.offsetY + y * state.scale;
+                    ctx.moveTo(0, screenY); ctx.lineTo(width, screenY);
+                }
+                ctx.stroke();
+            };
+
+            // Dibujar minor y major grid
+            drawLines(minorStep, 'rgba(255, 255, 255, 0.05)', 1);
+            drawLines(majorStep, 'rgba(255, 255, 255, 0.15)', 1.5);
+
+            // ➕ Dibujar Ejes Principales (X e Y)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            // Eje X (y = 0)
+            if (state.offsetY > 0 && state.offsetY < height) {
+                ctx.moveTo(0, state.offsetY); ctx.lineTo(width, state.offsetY);
+            }
+            // Eje Y (x = 0)
+            if (state.offsetX > 0 && state.offsetX < width) {
+                ctx.moveTo(state.offsetX, 0); ctx.lineTo(state.offsetX, height);
+            }
+            ctx.stroke();
+
+            // 🔢 Dibujar Números y Ticks
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.font = '12px Segoe UI';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+
+            // Ticks Eje X
+            const startX = Math.floor(left / majorStep) * majorStep;
+            for (let x = startX; x <= right; x += majorStep) {
+                if (Math.abs(x) < 0.01) continue; // Evitar el 0
+                const screenX = state.offsetX + x * state.scale;
+                ctx.beginPath();
+                ctx.moveTo(screenX, state.offsetY - 5); ctx.lineTo(screenX, state.offsetY + 5);
+                ctx.stroke();
+                ctx.fillText(x.toFixed(1), screenX, state.offsetY + 8);
+            }
+
+            // Ticks Eje Y
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            const startY = Math.floor(top / majorStep) * majorStep;
+            for (let y = startY; y <= bottom; y += majorStep) {
+                if (Math.abs(y) < 0.01) continue;
+                const screenY = state.offsetY + y * state.scale;
+                ctx.beginPath();
+                ctx.moveTo(state.offsetX - 5, screenY); ctx.lineTo(state.offsetX + 5, screenY);
+                ctx.stroke();
+                // Ojo: En canvas Y crece hacia abajo, la matemática es al revés
+                ctx.fillText((-y).toFixed(1), state.offsetX - 8, screenY);
+            }
+
+            // Etiqueta del origen
+            ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+            ctx.fillText("0", state.offsetX - 5, state.offsetY + 5);
+        }
+
+        // 🌊 DIBUJAR LA ONDA (Gráfica de elongación)
+        function drawWave(width) {
+            if (!state.showGraph) return;
+
+            ctx.strokeStyle = '#ff007f'; // Color Neon Pink
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+
+            const left = -state.offsetX / state.scale;
+            const right = (width - state.offsetX) / state.scale;
+
+            // Iteramos sobre el eje X visible (que representa el tiempo)
+            for (let t = Math.max(0, left); t <= state.time; t += 0.05) {
+                // Ecuación M.A.S: x = A * sin(ωt + α)
+                // Usamos 'elongation' en vez de 'x' para no confundir con coordenadas gráficas
+                const elongation = state.A * Math.sin(state.omega * t + state.alpha);
+
+                const screenX = state.offsetX + t * state.scale;
+                const screenY = state.offsetY - elongation * state.scale; // Y invertido en canvas
+
+                if (t === Math.max(0, left)) ctx.moveTo(screenX, screenY);
+                else ctx.lineTo(screenX, screenY);
+            }
+            ctx.stroke();
+
+            // Resplandor de la línea
+            ctx.strokeStyle = 'rgba(255, 0, 127, 0.3)';
+            ctx.lineWidth = 8;
+            ctx.stroke();
+        }
+
+        // 🟢 DIBUJAR LA PARTÍCULA
+        function drawParticle() {
+            // Posición actual
+            const elongation = state.A * Math.sin(state.omega * state.time + state.alpha);
+
+            const screenX = state.offsetX + state.time * state.scale;
+            const screenY = state.offsetY - elongation * state.scale;
+
+            // Dibujar línea guía desde el eje X
+            ctx.strokeStyle = 'rgba(0, 255, 204, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(screenX, state.offsetY);
+            ctx.lineTo(screenX, screenY);
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset dash
+
+            // Partícula (Estilo Glass/Neon)
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, 10, 0, Math.PI * 2);
+            ctx.fillStyle = '#00ffcc';
+            ctx.fill();
+
+            // Brillo
+            ctx.shadowColor = '#00ffcc';
+            ctx.shadowBlur = 15;
+            ctx.fill();
+            ctx.shadowBlur = 0; // Reset
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        // 🔄 BUCLE DE ANIMACIÓN PRINCIPAL
+        let lastTimestamp = 0;
+        function animate(timestamp) {
+            // Delta time para independizar velocidad de los FPS del monitor
+            if (!lastTimestamp) lastTimestamp = timestamp;
+            const dt = (timestamp - lastTimestamp) / 1000; // En segundos
+            lastTimestamp = timestamp;
+
+            const rect = container.getBoundingClientRect();
+            const cssWidth = rect.width;
+            const cssHeight = rect.height;
+
+            // Limpiar canvas (Fondo oscuro para contraste del estilo Aurora/Glass)
+            ctx.fillStyle = '#0b0f19';
+            ctx.fillRect(0, 0, cssWidth, cssHeight);
+
+            // Actualizar lógica física
+            if (state.isPlaying) {
+                state.time += dt;
+
+                // Seguimiento de cámara automático: Si la partícula llega al 80% de la pantalla,
+                // desplazamos el plano para que siempre se vea.
+                const particleScreenX = state.offsetX + state.time * state.scale;
+                if (particleScreenX > cssWidth * 0.8 && !state.isDragging) {
+                    state.offsetX -= (particleScreenX - cssWidth * 0.8) * 0.1; // Suavizado
+                }
+            }
+
+            // Renderizar capas
+            drawGrid(cssWidth, cssHeight);
+            drawWave(cssWidth);
+            drawParticle();
+
+            requestAnimationFrame(animate);
+        }
+
+        // 🚀 Iniciar
+        resizeCanvas();
+        requestAnimationFrame(animate);
+
+    </script>
+</body>
+
+</html>

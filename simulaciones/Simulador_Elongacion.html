@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Elongación</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            /* Blue matches the image */
+            --primary-hover: #2563eb;
+            --text-main: #1e293b;
+            --text-secondary: #475569;
+            --axis-color: #0f172a;
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        }
+
+        /* Support for dark mode if injected in iframe */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --text-main: #f1f5f9;
+                --text-secondary: #94a3b8;
+                --axis-color: #e2e8f0;
+                --bg-body: #0f172a;
+                --bg-card: #1e293b;
+                --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            }
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .simulation-card {
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            width: 90%;
+            max-width: 800px;
+            text-align: center;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .title {
+            color: var(--text-main);
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            font-size: 0.95rem;
+        }
+
+        .axis-container {
+            position: relative;
+            height: 120px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* The main horizontal line */
+        .axis-line {
+            position: absolute;
+            top: 50px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background-color: var(--axis-color);
+            border-radius: 2px;
+        }
+
+        /* Ticks */
+        .tick {
+            position: absolute;
+            top: 35px;
+            width: 3px;
+            height: 30px;
+            background-color: var(--axis-color);
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+
+        .tick.left {
+            left: 10%;
+        }
+
+        .tick.center {
+            left: 50%;
+        }
+
+        .tick.right {
+            left: 90%;
+        }
+
+        /* Labels */
+        .label {
+            position: absolute;
+            top: 10px;
+            transform: translateX(-50%);
+            color: var(--text-main);
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .label.left {
+            left: 10%;
+        }
+
+        .label.center {
+            left: 50%;
+        }
+
+        .label.right {
+            left: 90%;
+        }
+
+        /* The draggable mass/point */
+        .mass {
+            position: absolute;
+            top: 50px;
+            left: 70%;
+            /* Initial pos */
+            width: 30px;
+            height: 30px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: grab;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4);
+            transition: box-shadow 0.2s, transform 0.1s;
+            z-index: 10;
+        }
+
+        .mass:hover {
+            box-shadow: 0 6px 14px rgba(59, 130, 246, 0.6);
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .mass:active {
+            cursor: grabbing;
+            transform: translate(-50%, -50%) scale(0.95);
+        }
+
+        /* The label 'x' above the mass */
+        .mass-label {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--primary);
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        /* Elongation indicator (line from center to mass) */
+        .elongation-line {
+            position: absolute;
+            top: 75px;
+            left: 50%;
+            height: 3px;
+            background-color: var(--primary);
+            transform-origin: left center;
+            width: 20%;
+            /* Will be updated dynamically */
+            border-radius: 2px;
+        }
+
+        /* Label for elongation */
+        .elongation-label {
+            position: absolute;
+            top: 85px;
+            left: 60%;
+            /* Updated dynamically */
+            transform: translateX(-50%);
+            color: var(--primary);
+            font-size: 1rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .value-display {
+            margin-top: 2rem;
+            font-size: 1.1rem;
+            color: var(--text-main);
+            background: rgba(148, 163, 184, 0.1);
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        .value-display span {
+            font-family: monospace;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="simulation-card">
+        <h2 class="title">Concepto de Elongación</h2>
+        <p class="subtitle">Arrastra la partícula azul (x) para ver cómo cambia la elongación desde el punto de
+            equilibrio.</p>
+
+        <div class="axis-container" id="axisContainer">
+            <!-- Axis and Ticks -->
+            <div class="axis-line"></div>
+
+            <div class="tick left"></div>
+            <div class="label left">-A</div>
+
+            <div class="tick center"></div>
+            <div class="label center">o (Equilibrio)</div>
+
+            <div class="tick right"></div>
+            <div class="label right">+A</div>
+
+            <!-- Elongation Indicator (Line + Text) -->
+            <div class="elongation-line" id="elongLine"></div>
+            <div class="elongation-label" id="elongLabel">elongación</div>
+
+            <!-- Draggable Particle -->
+            <div class="mass" id="particle">
+                <div class="mass-label">x</div>
+            </div>
+        </div>
+
+        <div class="value-display">
+            Elongación actual: <span id="elongValue">0.50</span> A
+        </div>
+    </div>
+
+    <script>
+        const particle = document.getElementById('particle');
+        const container = document.getElementById('axisContainer');
+        const elongLine = document.getElementById('elongLine');
+        const elongLabel = document.getElementById('elongLabel');
+        const elongValue = document.getElementById('elongValue');
+
+        let isDragging = false;
+
+        // Min and max limits in percentage (10% to 90%)
+        const minPct = 10;
+        const maxPct = 90;
+        const centerPct = 50;
+        let currentPct = 70; // Start position
+
+        function updatePositions(pct) {
+            // Constrain percentage
+            pct = Math.max(minPct, Math.min(maxPct, pct));
+            currentPct = pct;
+
+            // Update particle position
+            particle.style.left = pct + '%';
+
+            // Calculate elongation value (-1 to +1) based on A
+            // 10% = -1A, 50% = 0, 90% = +1A
+            // range is 40% for 1A
+            const aValue = (pct - centerPct) / 40;
+            elongValue.textContent = (aValue > 0 ? '+' : '') + aValue.toFixed(2);
+
+            // Update elongation line
+            // If pct > 50, line goes from 50% to pct -> width is pct - 50
+            // If pct <= 50, line goes from pct to 50% -> left is pct, width is 50 - pct
+            if (pct >= centerPct) {
+                elongLine.style.left = centerPct + '%';
+                elongLine.style.width = (pct - centerPct) + '%';
+                elongLabel.style.left = (centerPct + (pct - centerPct) / 2) + '%';
+            } else {
+                elongLine.style.left = pct + '%';
+                elongLine.style.width = (centerPct - pct) + '%';
+                elongLabel.style.left = (pct + (centerPct - pct) / 2) + '%';
+            }
+
+            // Hide elongation elements if at exactly 0
+            if (Math.abs(pct - centerPct) < 0.5) {
+                elongLine.style.display = 'none';
+                elongLabel.style.display = 'none';
+            } else {
+                elongLine.style.display = 'block';
+                elongLabel.style.display = 'block';
+            }
+        }
+
+        // Mouse Events
+        particle.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            document.body.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const rect = container.getBoundingClientRect();
+            let x = e.clientX - rect.left;
+            let pct = (x / rect.width) * 100;
+
+            updatePositions(pct);
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            document.body.style.cursor = 'default';
+        });
+
+        // Touch Events
+        particle.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            // Prevent scrolling while dragging
+            e.preventDefault();
+        }, { passive: false });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+
+            const touch = e.touches[0];
+            const rect = container.getBoundingClientRect();
+            let x = touch.clientX - rect.left;
+            let pct = (x / rect.width) * 100;
+
+            updatePositions(pct);
+        }, { passive: false });
+
+        document.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        // Initialize display
+        updatePositions(currentPct);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor de Código LaTeX</title>
+    <!-- Tema oscuro de highlight.js -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/latex.min.js"></script>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background-color: #1e1e24;
+            color: #abb2bf;
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: #282c34;
+            padding: 10px 15px;
+            font-size: 14px;
+            color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .container {
+            height: calc(100% - 40px);
+            overflow: auto;
+            box-sizing: border-box;
+        }
+
+        pre {
+            margin: 0;
+            padding: 20px;
+            tab-size: 4;
+            min-height: 100%;
+            box-sizing: border-box;
+        }
+
+        code {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .error {
+            color: #e06c75;
+            padding: 20px;
+            display: block;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e1e24;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4b5263;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5c6370;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <span id="filename">Cargando...</span>
+        <button id="copy-btn" title="Copiar al portapapeles"
+            style="background: #3e4451; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: background 0.2s;">Copiar
+            Código</button>
+    </div>
+    <div class="container">
+        <pre><code class="language-latex" id="tex-content">Cargando archivo fuente...</code></pre>
+    </div>
+
+    <script>
+        // Obtener el archivo desde la URL (?file=...)
+        const urlParams = new URLSearchParams(window.location.search);
+        const file = urlParams.get('file') || 'Guias fisica/Solucion_taller.tex';
+
+        let pathParts = file.split('/');
+        let filename = pathParts[pathParts.length - 1];
+        document.getElementById('filename').textContent = filename;
+
+        let rawCode = '';
+
+        fetch(file)
+            .then(response => {
+                if (!response.ok) throw new Error('Error HTTP: ' + response.status);
+                return response.text();
+            })
+            .then(text => {
+                rawCode = text;
+                const texContent = document.getElementById('tex-content');
+                texContent.textContent = text;
+                hljs.highlightElement(texContent);
+            })
+            .catch(error => {
+                document.getElementById('tex-content').innerHTML = '<span class="error"><strong>Error al cargar el archivo LaTeX:</strong> ' + error.message + '<br><br>Asegúrate de ejecutar esta página en un servidor local (localhost) para evitar bloqueos CORS o de lectura de archivos locales.</span>';
+            });
+
+        document.getElementById('copy-btn').addEventListener('click', () => {
+            if (!rawCode) return;
+            navigator.clipboard.writeText(rawCode).then(() => {
+                const btn = document.getElementById('copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = '¡Copiado!';
+                btn.style.background = '#98c379';
+                btn.style.color = '#282c34';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#3e4451';
+                    btn.style.color = 'white';
+                }, 2000);
+            });
+        });
+    </script>
+</body>
+
+</html>

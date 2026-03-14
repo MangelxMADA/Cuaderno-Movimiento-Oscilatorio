@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fisica 3 — Apuntes de Clase</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚛️</text></svg>">
+    <meta name="description"
+        content="Apuntes interactivos de Fisica 3 con simulaciones, ecuaciones y contenido en formato IEEE. Universidad Tecnologica de Pereira.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Estilos -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Fondo Aurora -->
+    <div class="aurora-bg"></div>
+
+    <!-- ═══════ HEADER ═══════ -->
+    <header class="header">
+        <a class="header-logo" href="#inicio" onclick="navigate('inicio')">
+            <div class="header-logo-icon">
+                <i class="fa-solid fa-atom"></i>
+            </div>
+            <span class="header-logo-text">Fisica 3</span>
+        </a>
+
+        <!-- Buscador -->
+        <div class="search-container">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="search-input" class="search-input" placeholder="Buscar temas, ecuaciones..."
+                autocomplete="off">
+            <div id="search-results" class="search-results"></div>
+        </div>
+
+        <!-- Acciones: Tema y Menu -->
+        <div class="header-actions">
+            <button class="theme-toggle" id="theme-toggle" aria-label="Cambiar tema" title="Modo oscuro">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+            <button class="hamburger-btn" id="hamburger-btn" aria-label="Menu">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ═══════ OVERLAY MENU ═══════ -->
+    <div class="nav-overlay" id="nav-overlay"></div>
+
+    <!-- ═══════ SIDEBAR DERECHO (NAV) ═══════ -->
+    <nav class="nav-sidebar" id="nav-sidebar">
+        <div class="nav-section-title">Navegacion</div>
+        <a class="nav-item" onclick="navigate('inicio'); closeMenu();" data-nav-id="inicio">
+            <i class="fa-solid fa-house"></i> Inicio
+        </a>
+
+        <div class="nav-divider"></div>
+        <div class="nav-section-title">Temas</div>
+        <div id="nav-topics-list"></div>
+
+        <div class="nav-divider"></div>
+        <a class="nav-item" onclick="navigate('recursos'); closeMenu();" data-nav-id="recursos">
+            <i class="fa-solid fa-clipboard-list"></i> Recursos
+        </a>
+
+        <div class="nav-divider"></div>
+        <a class="nav-item" onclick="navigate('sobre-nosotros'); closeMenu();" data-nav-id="sobre-nosotros">
+            <i class="fa-solid fa-users"></i> Sobre Nosotros
+        </a>
+    </nav>
+
+    <!-- ═══════ CONTENIDO PRINCIPAL ═══════ -->
+    <main class="main-content">
+
+        <!-- ── VISTA: INICIO ── -->
+        <div class="view active" id="view-inicio">
+            <section class="hero-section">
+                <div class="hero-image-container">
+                    <canvas id="hero-canvas" style="width:100%;height:100%;"></canvas>
+                    <img src="hero.png" alt="Fisica 3" style="position:absolute;top:0;left:0;">
+                </div>
+                <div class="hero-content">
+                    <span class="hero-badge animate-in">Universidad Tecnologica de Pereira</span>
+                    <h1 class="hero-title animate-in animate-delay-1">Fisica 3</h1>
+                    <p class="hero-subtitle animate-in animate-delay-2">
+                        Explora el fascinante mundo del movimiento oscilatorio, el movimiento armonico simple, la
+                        energia en sistemas mecanicos y mas. Apuntes interactivos con simulaciones y visualizaciones.
+                    </p>
+                    <button class="hero-cta animate-in animate-delay-3"
+                        onclick="navigate('tema/movimiento-oscilatorio')">
+                        <i class="fa-solid fa-rocket"></i> Comenzar a explorar
+                    </button>
+                </div>
+            </section>
+
+            <!-- Ejemplo interesante -->
+            <section class="intro-section">
+                <div class="intro-card animate-in">
+                    <h2>Un universo que vibra</h2>
+                    <p>
+                        Todo en el universo oscila. Desde los atomos que forman la materia hasta las ondas de luz que
+                        nos permiten ver, el movimiento oscilatorio es uno de los fenomenos mas fundamentales de la
+                        naturaleza. Cada vez que escuchas musica, un instrumento genera ondas sonoras — vibraciones que
+                        viajan por el aire hasta tus oidos. El corazon humano late ritmicamente unas 100.000 veces al
+                        dia, un ejemplo perfecto de movimiento periodico.
+                    </p>
+                    <p>
+                        En este curso estudiaremos como describir matematicamente estas oscilaciones. La ecuacion del
+                        movimiento armonico simple:
+                    </p>
+                    <p style="text-align: center; margin: 1.5rem 0;">
+                        $$x(t) = A\sin(\omega t + \alpha)$$
+                    </p>
+                    <p>
+                        Esta elegante expresion contiene toda la informacion necesaria para predecir la posicion de un
+                        objeto oscilante en cualquier instante. Tres parametros — amplitud, frecuencia y fase — definen
+                        completamente el movimiento. A lo largo de estos apuntes descubriremos como esta ecuacion surge
+                        naturalmente de la fisica y como se aplica a sistemas reales como pendulos, resortes y ondas.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Grid de temas -->
+            <section class="topics-preview">
+                <h2 class="animate-in">Temas del curso</h2>
+                <div class="topics-grid" id="topics-grid">
+                    <!-- Generado dinamicamente, fallback estatico: -->
+                    <div class="topic-card animate-in" onclick="navigate('tema/movimiento-oscilatorio')">
+                        <div class="topic-card-number">TEMA I</div>
+                        <h3>Movimiento Oscilatorio</h3>
+                        <p>Definicion, tipos de oscilacion, periodo, frecuencia y movimiento periodico.</p>
+                    </div>
+                    <div class="topic-card animate-in animate-delay-1"
+                        onclick="navigate('tema/movimiento-armonico-simple')">
+                        <div class="topic-card-number">TEMA II</div>
+                        <h3>Movimiento Armonico Simple</h3>
+                        <p>Ecuacion del MAS, frecuencia angular, fase inicial y visualizacion.</p>
+                    </div>
+                    <div class="topic-card animate-in animate-delay-2" onclick="navigate('tema/cinematica-mas')">
+                        <div class="topic-card-number">TEMA III</div>
+                        <h3>Cinematica del MAS</h3>
+                        <p>Velocidad, aceleracion, relaciones con la elongacion y ecuacion caracteristica.</p>
+                    </div>
+                    <div class="topic-card animate-in animate-delay-3" onclick="navigate('tema/dinamica-energia-mas')">
+                        <div class="topic-card-number">TEMA IV</div>
+                        <h3>Dinamica y Energia del MAS</h3>
+                        <p>Ley de Hooke, energia cinetica, potencial y mecanica total.</p>
+                    </div>
+                    <div class="topic-card animate-in animate-delay-4" onclick="navigate('tema/pendulo-simple')">
+                        <div class="topic-card-number">TEMA V</div>
+                        <h3>Pendulo Simple</h3>
+                        <p>Fuerzas, tension, aproximacion de angulos pequenos y periodo.</p>
+                    </div>
+                    <div class="topic-card animate-in" onclick="navigate('tema/sistema-masa-resorte')">
+                        <div class="topic-card-number">TEMA VI</div>
+                        <h3>Sistema Masa-Resorte</h3>
+                        <p>Periodo, frecuencia angular y constante elastica del resorte.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ── VISTA: TEMA ── -->
+        <div class="view" id="view-tema">
+            <div class="topic-view-container">
+                <aside class="toc-sidebar" id="toc-sidebar">
+                    <!-- TOC generado por JS -->
+                </aside>
+                <article class="ieee-content" id="topic-content">
+                    <!-- Contenido generado por JS -->
+                </article>
+            </div>
+        </div>
+
+        <!-- ── VISTA: RECURSOS ── -->
+        <div class="view" id="view-recursos">
+            <div class="workshops-container">
+                <h1 class="animate-in">Recursos</h1>
+                <p style="text-align:center; color: var(--text-muted); margin-bottom: 2rem;"
+                    class="animate-in animate-delay-1">
+                    Material práctico, teoría y solucionarios del curso.
+                </p>
+
+                <!-- ── RECURSO 1 ── -->
+                <div class="recurso-group animate-in animate-delay-2">
+                    <h2
+                        style="color: var(--primary); margin-bottom: 1.5rem; text-transform: uppercase; font-size: 1.2rem; border-bottom: 2px solid var(--border-light); padding-bottom: 0.5rem;">
+                        Recurso 1</h2>
+
+                    <div class="workshop-card" style="margin-bottom: 1.5rem;">
+                        <p style="color: var(--text-secondary); line-height: 1.7; margin-bottom: 1rem;">
+                            Ejercicios prácticos correspondientes al Taller 1. Resuelve los problemas propuestos de
+                            movimiento oscilatorio y MAS.
+                        </p>
+                        <div class="simulation-container">
+                            <div class="simulation-header">
+                                <span><i class="fa-solid fa-file-lines"></i>&nbsp; Taller 1 — Movimiento Oscilatorio
+                                    (Páginas 53–57)</span>
+                                <div>
+                                    <span class="sim-badge">PDF</span>
+                                    <button class="sim-fullscreen-btn"
+                                        onclick="toggleFullscreen(this.closest('.simulation-container'))"
+                                        title="Ampliar pantalla">
+                                        <i class="fa-solid fa-expand"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <iframe class="simulation-iframe" src="Guias fisica/Taller_1.pdf"
+                                title="Taller 1 — Movimiento Oscilatorio"></iframe>
+                        </div>
+                    </div>
+
+                    <div class="workshop-card" style="margin-bottom: 1.5rem;">
+                        <p style="color: var(--text-secondary); line-height: 1.7; margin-bottom: 1rem;">
+                            Guía teórica completa sobre Movimiento Oscilatorio, excluyendo los ejercicios del Taller 1
+                            para enfocarse en los conceptos.
+                        </p>
+                        <div class="simulation-container">
+                            <div class="simulation-header">
+                                <span><i class="fa-solid fa-book-open"></i>&nbsp; Guías — Teoría</span>
+                                <div>
+                                    <span class="sim-badge">PDF</span>
+                                    <button class="sim-fullscreen-btn"
+                                        onclick="toggleFullscreen(this.closest('.simulation-container'))"
+                                        title="Ampliar pantalla">
+                                        <i class="fa-solid fa-expand"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <iframe class="simulation-iframe" src="Guias fisica/Guia_Teoria.pdf"
+                                title="Guías — Teoría"></iframe>
+                        </div>
+                    </div>
+
+                    <div class="workshop-card">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 1rem;">
+                            <h3 style="color: var(--primary-light); margin: 0;">
+                                <i class="fa-solid fa-check-double"></i> Solución de Taller 1
+                            </h3>
+                            <div class="resource-tabs" style="display: flex; gap: 8px;">
+                                <button class="resource-tab active" onclick="switchSolucionView(this, 'pdf')"
+                                    style="padding: 4px 12px; border-radius: 4px; border: 1px solid var(--primary); background: var(--primary); color: white; cursor: pointer; font-size: 0.85rem; font-weight: bold; transition: all 0.2s;">PDF</button>
+                                <button class="resource-tab" onclick="switchSolucionView(this, 'tex')"
+                                    style="padding: 4px 12px; border-radius: 4px; border: 1px solid var(--primary); background: transparent; color: var(--primary); cursor: pointer; font-size: 0.85rem; font-weight: bold; transition: all 0.2s;">LaTeX</button>
+                            </div>
+                        </div>
+                        <p id="solucion-desc"
+                            style="color: var(--text-secondary); line-height: 1.7; margin-bottom: 1rem;">
+                            Documento PDF con la solución detallada de los ejercicios propuestos en el Taller 1.
+                        </p>
+                        <div class="simulation-container">
+                            <div class="simulation-header">
+                                <span id="solucion-title"><i class="fa-solid fa-file-pdf"></i>&nbsp; Documento PDF —
+                                    Solución Taller 1</span>
+                                <div>
+                                    <span id="solucion-badge" class="sim-badge">PDF</span>
+                                    <button class="sim-fullscreen-btn"
+                                        onclick="toggleFullscreen(this.closest('.simulation-container'))"
+                                        title="Ampliar pantalla">
+                                        <i class="fa-solid fa-expand"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <iframe id="solucion-iframe" class="simulation-iframe"
+                                src="Guias fisica/Solucion_taller pdf.pdf" title="Solución Taller 1"></iframe>
+                        </div>
+
+                        <script>
+                            function switchSolucionView(btn, type) {
+                                const tabs = btn.parentElement.querySelectorAll('.resource-tab');
+                                tabs.forEach(t => {
+                                    t.style.background = 'transparent';
+                                    t.style.color = 'var(--primary)';
+                                    t.classList.remove('active');
+                                });
+                                btn.style.background = 'var(--primary)';
+                                btn.style.color = 'white';
+                                btn.classList.add('active');
+
+                                const iframe = document.getElementById('solucion-iframe');
+                                const title = document.getElementById('solucion-title');
+                                const badge = document.getElementById('solucion-badge');
+                                const desc = document.getElementById('solucion-desc');
+
+                                if (type === 'pdf') {
+                                    iframe.src = 'Guias fisica/Solucion_taller pdf.pdf';
+                                    title.innerHTML = '<i class="fa-solid fa-file-pdf"></i>&nbsp; Documento PDF — Solución Taller 1';
+                                    badge.textContent = 'PDF';
+                                    desc.textContent = 'Documento PDF con la solución detallada de los ejercicios propuestos en el Taller 1.';
+                                } else {
+                                    iframe.src = 'visor_tex.html?file=Guias%20fisica/Solucion_taller.tex';
+                                    title.innerHTML = '<i class="fa-solid fa-file-code"></i>&nbsp; Código LaTeX — Solución Taller 1';
+                                    badge.textContent = 'TEX';
+                                    desc.textContent = 'Código fuente en LaTeX con la solución detallada de los ejercicios propuestos en el Taller 1.';
+                                }
+                            }
+                        </script>
+                    </div>
+                </div>
+
+                <!-- ── VIDEOS CLASE ── -->
+                <div class="recurso-group animate-in animate-delay-3" style="margin-top: 3rem;">
+                    <h2
+                        style="color: var(--primary); margin-bottom: 1.5rem; text-transform: uppercase; font-size: 1.2rem; border-bottom: 2px solid var(--border-light); padding-bottom: 0.5rem;">
+                        Clases Grabadas</h2>
+
+                    <div class="workshop-card" style="margin-bottom: 1.5rem;">
+                        <p style="color: var(--text-secondary); line-height: 1.7; margin-bottom: 1rem;">
+                            Primera clase sobre las bases del movimiento oscilatorio, conceptos fundamentales y ejemplos
+                            preliminares dictada por el profesor Néstor Montoya.
+                        </p>
+                        <div class="simulation-container">
+                            <div class="simulation-header">
+                                <span><i class="fa-brands fa-youtube" style="color: #ff6b6b;"></i>&nbsp; Movimiento
+                                    Oscilatorio 1</span>
+                                <div>
+                                    <span class="sim-badge">Video</span>
+                                    <button class="sim-fullscreen-btn"
+                                        onclick="toggleFullscreen(this.closest('.simulation-container'))"
+                                        title="Ampliar pantalla">
+                                        <i class="fa-solid fa-expand"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <iframe class="simulation-iframe" src="https://www.youtube.com/embed/0lr4BcryLmg"
+                                title="Movimiento Oscilatorio 1" allowfullscreen></iframe>
+                        </div>
+                    </div>
+
+                    <div class="workshop-card" style="margin-bottom: 1.5rem;">
+                        <p style="color: var(--text-secondary); line-height: 1.7; margin-bottom: 1rem;">
+                            Segunda clase que profundiza en la ecuación del Movimiento Armónico Simple (MAS) y análisis
+                            cinemático del sistema.
+                        </p>
+                        <div class="simulation-container">
+                            <div class="simulation-header">
+                                <span><i class="fa-brands fa-youtube" style="color: #ff6b6b;"></i>&nbsp; Movimiento
+                                    Oscilatorio 2</span>
+                                <div>
+                                    <span class="sim-badge">Video</span>
+                                    <button class="sim-fullscreen-btn"
+                                        onclick="toggleFullscreen(this.closest('.simulation-container'))"
+                                        title="Ampliar pantalla">
+                                        <i class="fa-solid fa-expand"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <iframe class="simulation-iframe" src="https://www.youtube.com/embed/BOII-YORy7s"
+                                title="Movimiento Oscilatorio 2" allowfullscreen></iframe>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ── VISTA: SOBRE NOSOTROS ── -->
+        <div class="view" id="view-sobre-nosotros">
+            <div class="about-container">
+                <h1 class="animate-in">Sobre Nosotros</h1>
+                <p class="about-subtitle animate-in animate-delay-1">Fisica 3 — Universidad Tecnologica de Pereira</p>
+
+                <div class="about-card animate-in animate-delay-2">
+                    <h3><i class="fa-solid fa-university"></i> Universidad</h3>
+                    <p>
+                        <strong>Universidad Tecnologica de Pereira (UTP)</strong><br>
+                        Institucion publica de educacion superior ubicada en la ciudad de Pereira, Risaralda, Colombia.
+                        Reconocida por su excelencia academica e investigativa, la UTP forma profesionales integrales
+                        comprometidos con el desarrollo de la region y el pais.
+                    </p>
+                </div>
+
+                <div class="about-card animate-in animate-delay-3">
+                    <h3><i class="fa-solid fa-chalkboard-user"></i> Profesor</h3>
+                    <p>
+                        <strong>Nestor Montoya</strong><br>
+                        Docente del curso de Fisica 3 en la Universidad Tecnologica de Pereira. Encargado de guiar el
+                        aprendizaje de los conceptos fundamentales del movimiento oscilatorio, las ondas y la fisica
+                        moderna.
+                    </p>
+                    <a href="https://youtube.com/@nestormontoya1?si=5y9ZtcIr9Ie6piOt" target="_blank"
+                        rel="noopener noreferrer"
+                        style="display: inline-flex; align-items: center; gap: 8px; margin-top: 1rem; color: #ff4444; text-decoration: none; font-weight: 600; font-size: 0.95rem; transition: var(--transition);"
+                        onmouseover="this.style.transform='translateX(5px)'" onmouseout="this.style.transform='none'">
+                        <i class="fa-brands fa-youtube" style="font-size: 1.2rem;"></i> Canal de YouTube
+                    </a>
+                </div>
+
+                <div class="about-card animate-in animate-delay-4">
+                    <h3><i class="fa-solid fa-user-graduate"></i> Estudiantes</h3>
+                    <p>
+                        <strong>Miguel Angel Delgado Acevedo</strong><br>
+                        Estudiante de la Universidad Tecnologica de Pereira. Creador de estos apuntes interactivos como
+                        herramienta de estudio y repaso para el curso de Fisica 3.
+                    </p>
+                    <p style="margin-top: 1rem;">
+                        <strong>Andres Felipe Bernal</strong><br>
+                        Estudiante de la Universidad Tecnologica de Pereira. Colaborador en la estruturación y revisión
+                        de los
+                        contenidos teóricos y prácticos del curso.
+                    </p>
+                </div>
+
+                <div class="about-card animate-in" style="text-align: center; border-style: dashed;">
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">
+                        Estos apuntes fueron desarrollados como material de apoyo academico. Las simulaciones
+                        interactivas permiten visualizar y comprender mejor los conceptos fisicos estudiados en clase.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Boton Toggle TOC (mobile) -->
+    <button class="toc-toggle-btn" id="toc-toggle" onclick="toggleToc()" style="display: none;"
+        aria-label="Tabla de contenido">
+        <i class="fa-solid fa-list"></i>
+    </button>
+
+    <!-- App JS -->
+    <script src="app.js"></script>
+    <!-- Chatbot IA -->
+    <script src="chatbot.js"></script>
+</body>
+
+</html>

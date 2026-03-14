@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Sistema Masa-Resorte</title>
+
+    <!-- Fuentes e Iconos -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Librería Gráfica (Plotly) -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+    <style>
+        /* ═══ RESET Y VARIABLES ═══ */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --danger: #f43f5e;
+            --warning: #f59e0b;
+            --bg-dark: #0f172a;
+            --bg-canvas: #1e293b;
+            --bg-card: rgba(30, 41, 59, 0.85);
+            --bg-modal: rgba(15, 23, 42, 0.95);
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --border: rgba(148, 163, 184, 0.15);
+            --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            --radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+            --vector-force: #f43f5e;
+            --spring-color: #94a3b8;
+            --block-color: #818cf8;
+            --wall-color: #475569;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ═══ HEADER ═══ */
+        header {
+            padding: 1rem 2rem;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--text-primary), var(--primary-light));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* ═══ MAIN LAYOUT ═══ */
+        main {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            flex-grow: 1;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        /* ═══ SIMULATION AREA ═══ */
+        .simulation-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            flex-grow: 1;
+            background: var(--bg-canvas);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            min-height: 400px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        /* Overlay Hint */
+        .drag-hint {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: pulse-glow 2s infinite;
+        }
+
+        @keyframes pulse-glow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 10px rgba(99, 102, 241, 0);
+                opacity: 0.8;
+            }
+
+            50% {
+                box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+                opacity: 1;
+            }
+        }
+
+        /* ═══ CONTROLS ═══ */
+        .controls-panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            align-items: end;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .val-display {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent);
+        }
+
+        /* Sliders */
+        input[type=range] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none;
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+            transition: var(--transition);
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: var(--primary-light);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 2px;
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        button {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 15px -3px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        /* ═══ DATA PANEL ═══ */
+        .data-panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .data-panel h2 {
+            font-size: 1.125rem;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .data-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            border-left: 3px solid var(--primary);
+            transition: var(--transition);
+        }
+
+        .data-item:hover {
+            background: rgba(0, 0, 0, 0.3);
+            transform: translateX(4px);
+        }
+
+        .data-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+        }
+
+        .data-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        .data-unit {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Colored Borders for Data Panel */
+        .item-x {
+            border-color: var(--accent);
+        }
+
+        .item-v {
+            border-color: var(--success);
+        }
+
+        .item-a {
+            border-color: var(--warning);
+        }
+
+        .item-f {
+            border-color: var(--danger);
+        }
+
+        .item-k {
+            border-color: #a855f7;
+        }
+
+        .item-u {
+            border-color: #ec4899;
+        }
+
+        .graphs-trigger {
+            margin-top: auto;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            border: none;
+        }
+
+        .graphs-trigger:hover {
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+            transform: translateY(-2px);
+        }
+
+        /* ═══ MODALS / GRAPHS WINDOW ═══ */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: var(--bg-modal);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 1200px;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .modal-header h2 {
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-close {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+
+        .btn-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--danger);
+        }
+
+        .modal-body {
+            flex-grow: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .graph-wrapper {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            height: 350px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .graph-wrapper h3 {
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .plot-container {
+            flex-grow: 1;
+            width: 100%;
+            background: white !important;
+            /* Para que parezca Geogebra/Papel milimetrado */
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-body {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Simulación: Sistema Masa-Resorte</h1>
+        <div style="display:flex; gap: 1rem;">
+            <button class="btn-secondary" onclick="resetSimulation()" title="Restablecer">
+                <i data-lucide="rotate-ccw"></i>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <!-- Columna Izquierda: Simulación y Controles -->
+        <div class="simulation-container">
+            <div class="canvas-wrapper" id="canvasContainer">
+                <div class="drag-hint">
+                    <i data-lucide="hand"></i> Arrastra el bloque para establecer la amplitud
+                </div>
+                <canvas id="simCanvas"></canvas>
+            </div>
+
+            <div class="controls-panel">
+                <div class="control-group">
+                    <label for="kSlider">
+                        Constante del Resorte (k)
+                        <span class="val-display" id="kValDisplay">15 N/m</span>
+                    </label>
+                    <input type="range" id="kSlider" min="1" max="50" step="1" value="15">
+                </div>
+
+                <div class="control-group">
+                    <label for="massSlider">
+                        Masa del Bloque (m)
+                        <span class="val-display" id="massValDisplay">1.0 kg</span>
+                    </label>
+                    <input type="range" id="massSlider" min="0.1" max="5.0" step="0.1" value="1.0">
+                </div>
+
+                <div class="control-group">
+                    <label for="forceScaleSlider">
+                        Escala del Vector Fuerza
+                        <span class="val-display" id="forceScaleDisplay">1.0x</span>
+                    </label>
+                    <input type="range" id="forceScaleSlider" min="0.1" max="3" step="0.1" value="1.0">
+                </div>
+
+                <div class="btn-group">
+                    <button id="playPauseBtn" class="btn-primary">
+                        <i data-lucide="pause"></i> Pausar
+                    </button>
+                    <button id="stepBtn" class="btn-secondary" title="Avanzar Paso">
+                        <i data-lucide="step-forward"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Panel de Datos -->
+        <div class="data-panel">
+            <h2><i data-lucide="activity"></i> Datos en Tiempo Real</h2>
+
+            <div class="data-item item-x">
+                <div class="data-label">Elongación (x)</div>
+                <div class="data-value"><span id="val_x">0.00</span><span class="data-unit">m</span></div>
+            </div>
+
+            <div class="data-item item-v">
+                <div class="data-label">Velocidad (v)</div>
+                <div class="data-value"><span id="val_v">0.00</span><span class="data-unit">m/s</span></div>
+            </div>
+
+            <div class="data-item item-a">
+                <div class="data-label">Aceleración (a)</div>
+                <div class="data-value"><span id="val_a">0.00</span><span class="data-unit">m/s²</span></div>
+            </div>
+
+            <div class="data-item item-f">
+                <div class="data-label">Fuerza Elástica (F = -kx)</div>
+                <div class="data-value"><span id="val_f">0.00</span><span class="data-unit">N</span></div>
+            </div>
+
+            <div class="data-item item-k">
+                <div class="data-label">Energía Cinética (K)</div>
+                <div class="data-value"><span id="val_k_e">0.00</span><span class="data-unit">J</span></div>
+            </div>
+
+            <div class="data-item item-u">
+                <div class="data-label">Energía Potencial (U)</div>
+                <div class="data-value"><span id="val_u">0.00</span><span class="data-unit">J</span></div>
+            </div>
+
+            <button class="graphs-trigger" onclick="openModal()">
+                <i data-lucide="line-chart"></i> Ver Gráficas Dinámicas
+            </button>
+        </div>
+    </main>
+
+    <!-- Modal de Gráficas -->
+    <div class="modal-overlay" id="graphsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i data-lucide="bar-chart-2"></i> Análisis Gráfico (Estilo GeoGebra)</h2>
+                <div style="display:flex; gap: 1rem; align-items:center;">
+                    <span style="font-size:0.875rem; color:var(--text-secondary);">
+                        <i data-lucide="zoom-in"
+                            style="width:16px;height:16px;display:inline-block;vertical-align:middle;"></i> Zoom/Scroll
+                        |
+                        <i data-lucide="move"
+                            style="width:16px;height:16px;display:inline-block;vertical-align:middle;"></i> Pan
+                        (Arrastrar)
+                    </span>
+                    <button class="btn-close" onclick="closeModal()">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="graph-wrapper">
+                    <h3>Elongación vs Tiempo, x(t)</h3>
+                    <div id="plot_x" class="plot-container"></div>
+                </div>
+                <div class="graph-wrapper">
+                    <h3>Velocidad vs Tiempo, v(t)</h3>
+                    <div id="plot_v" class="plot-container"></div>
+                </div>
+                <div class="graph-wrapper">
+                    <h3>Aceleración vs Tiempo, a(t)</h3>
+                    <div id="plot_a" class="plot-container"></div>
+                </div>
+                <div class="graph-wrapper">
+                    <h3>Energía (K y U) vs Tiempo</h3>
+                    <div id="plot_e" class="plot-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ LÓGICA JAVASCRIPT ═══ -->
+    <script>
+        // Inicializar Iconos
+        lucide.createIcons();
+
+        // --- SISTEMA FÍSICO ---
+        const PXX_TO_M = 0.01; // 1 pixel = 0.01 m --> 100px = 1m
+
+        let physics = {
+            k: 15,          // Constante resorte (N/m)
+            m: 1.0,         // Masa (kg)
+            x: 0,           // Elongación en m
+            v: 0,           // Velocidad en m/s
+            a: 0,           // Aceleración en m/s^2
+            A: 2.0,         // Amplitud inicial (m)
+            phi: 0,         // Fase inicial
+            t: 0,           // Tiempo de simulación
+            omega: 0,       // Frecuencia angular
+            isPaused: false,
+            isDragging: false,
+            forceScale: 1.0
+        };
+
+        // Arrays para gráficas
+        let history = { t: [], x: [], v: [], a: [], K: [], U: [] };
+        const MAX_POINTS = 500;
+
+        // --- REFERENCIAS DOM ---
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('canvasContainer');
+
+        // Controles Dom
+        const kSlider = document.getElementById('kSlider');
+        const massSlider = document.getElementById('massSlider');
+        const forceScaleSlider = document.getElementById('forceScaleSlider');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const stepBtn = document.getElementById('stepBtn');
+
+        // --- INICIALIZACIÓN Y REDIMENSIÓN ---
+        function resizeCanvas() {
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+
+            // Re-limitar la amplitud si cambia el tamaño
+            const originX = 150;
+            const eqX = canvas.width / 2;
+            const maxDisplacementPx = Math.max(0, eqX - (originX + 30));
+            const maxA = maxDisplacementPx * PXX_TO_M;
+            if (physics.A > maxA) {
+                physics.A = maxA;
+                if (Math.abs(physics.x) > maxA) {
+                    physics.x = Math.sign(physics.x) * maxA;
+                }
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function calculateAngularFreq() {
+            physics.omega = Math.sqrt(physics.k / physics.m);
+        }
+
+        function resetSimulation() {
+            physics.t = 0;
+
+            const originX = 150;
+            const eqX = canvas.width / 2;
+            const maxDisplacementPx = Math.max(0, eqX - (originX + 30));
+            const maxA = maxDisplacementPx * PXX_TO_M;
+
+            physics.A = Math.min(2.0, maxA);    // No exceder el límite físico
+            physics.x = physics.A;
+            physics.v = 0;
+            physics.phi = 0;
+            physics.isPaused = false;
+            updatePlayPauseUI();
+
+            history = { t: [], x: [], v: [], a: [], K: [], U: [] };
+            calculateAngularFreq();
+            updateDataPanel();
+
+            // Re-render empty plots
+            initPlotly();
+        }
+
+        // --- CONTROLADORES DE EVENTOS ---
+        kSlider.addEventListener('input', (e) => {
+            physics.k = parseFloat(e.target.value);
+            document.getElementById('kValDisplay').textContent = `${physics.k.toFixed(1)} N/m`;
+            calculateAngularFreq();
+        });
+
+        massSlider.addEventListener('input', (e) => {
+            physics.m = parseFloat(e.target.value);
+            document.getElementById('massValDisplay').textContent = `${physics.m.toFixed(1)} kg`;
+            calculateAngularFreq();
+        });
+
+        forceScaleSlider.addEventListener('input', (e) => {
+            physics.forceScale = parseFloat(e.target.value);
+            document.getElementById('forceScaleDisplay').textContent = `${physics.forceScale.toFixed(1)}x`;
+        });
+
+        playPauseBtn.addEventListener('click', () => {
+            physics.isPaused = !physics.isPaused;
+            updatePlayPauseUI();
+        });
+
+        stepBtn.addEventListener('click', () => {
+            if (!physics.isPaused) {
+                physics.isPaused = true;
+                updatePlayPauseUI();
+            }
+            updatePhysics(0.05); // Avanzar un pequeño paso
+            drawSimulation();
+            updateDataPanel();
+        });
+
+        function updatePlayPauseUI() {
+            if (physics.isPaused) {
+                playPauseBtn.innerHTML = '<i data-lucide="play"></i> Reanudar';
+                playPauseBtn.classList.replace('btn-primary', 'btn-secondary');
+            } else {
+                playPauseBtn.innerHTML = '<i data-lucide="pause"></i> Pausar';
+                playPauseBtn.classList.replace('btn-secondary', 'btn-primary');
+            }
+            lucide.createIcons();
+        }
+
+        // --- INTERACCIÓN DE ARRASTRE (DRAG) ---
+        let dragOffsetX = 0;
+
+        function getMouseX(evt) {
+            const rect = canvas.getBoundingClientRect();
+            return evt.clientX - rect.left;
+        }
+
+        function getBlockRect() {
+            const originX = 150; // Posición de la pared
+            const eqX = canvas.width / 2; // Punto de equilibrio visual
+            const visualX = eqX + (physics.x / PXX_TO_M);
+            const blockW = 60, blockH = 60;
+            const y = canvas.height / 2 - blockH / 2;
+            return { x: visualX - blockW / 2, y: y, w: blockW, h: blockH, centerX: visualX };
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            const mx = getMouseX(e);
+            const r = getBlockRect();
+            if (mx >= r.x && mx <= r.x + r.w) {
+                physics.isDragging = true;
+                physics.isPaused = true;
+                dragOffsetX = mx - r.centerX;
+                updatePlayPauseUI();
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!physics.isDragging) return;
+            const mx = getMouseX(e);
+            const eqX = canvas.width / 2;
+            let targetVisualX = mx - dragOffsetX;
+
+            // Límites visuales
+            const originX = 150;
+            const maxDisplacementPx = Math.max(0, eqX - (originX + 30)); // Max amplitud segura
+
+            if (targetVisualX < eqX - maxDisplacementPx) targetVisualX = eqX - maxDisplacementPx;
+            if (targetVisualX > eqX + maxDisplacementPx) targetVisualX = eqX + maxDisplacementPx;
+
+            // Actualizar estado físico basado en la posición arrastrada
+            physics.x = (targetVisualX - eqX) * PXX_TO_M;
+            // Se asume reposo al arrastrar
+            physics.v = 0;
+            physics.A = Math.abs(physics.x);
+            // reset t
+            physics.t = 0;
+            physics.phi = physics.x < 0 ? Math.PI : 0;
+
+            drawSimulation();
+            updateDataPanel();
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            if (physics.isDragging) {
+                physics.isDragging = false;
+                physics.isPaused = false;
+                updatePlayPauseUI();
+                history = { t: [], x: [], v: [], a: [], K: [], U: [] }; // Reset graphs on new initial state
+            }
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            if (physics.isDragging) {
+                physics.isDragging = false;
+                physics.isPaused = false;
+                updatePlayPauseUI();
+            }
+        });
+
+        // --- MOTOR FÍSICO Y RENDERIZADO ---
+        let lastTime = performance.now();
+
+        function updatePhysics(dt) {
+            if (physics.isPaused || physics.isDragging) return;
+
+            physics.t += dt;
+
+            // Ecuaciones MAS: x(t) = A * cos(w*t + phi)
+            physics.x = physics.A * Math.cos(physics.omega * physics.t + physics.phi);
+            physics.v = -physics.A * physics.omega * Math.sin(physics.omega * physics.t + physics.phi);
+            physics.a = -physics.A * physics.omega * physics.omega * Math.cos(physics.omega * physics.t + physics.phi);
+
+            // Guardar datos
+            if (history.t.length === 0 || physics.t - history.t[history.t.length - 1] > 0.05) {
+                const U = 0.5 * physics.k * physics.x * physics.x;
+                const K = 0.5 * physics.m * physics.v * physics.v;
+
+                history.t.push(physics.t);
+                history.x.push(physics.x);
+                history.v.push(physics.v);
+                history.a.push(physics.a);
+                history.K.push(K);
+                history.U.push(U);
+
+                if (history.t.length > MAX_POINTS) {
+                    history.t.shift();
+                    history.x.shift();
+                    history.v.shift();
+                    history.a.shift();
+                    history.K.shift();
+                    history.U.shift();
+                }
+            }
+        }
+
+        function drawSimulation() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const originX = 150; // Pared izquierda
+            const eqX = canvas.width / 2; // Posición de equilibrio
+            const visualX = physics.isDragging
+                ? eqX + (physics.x / PXX_TO_M)
+                : eqX + (physics.x / PXX_TO_M);
+            const cy = canvas.height / 2;
+            const blockW = 60, blockH = 60;
+
+            // 1. Dibujar Pared y Suelo
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--wall-color').trim();
+            // Pared
+            ctx.fillRect(originX - 20, cy - 80, 20, 160);
+            // Patrón de rayado para la pared (fijo geogebra-like)
+            ctx.beginPath();
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 2;
+            for (let i = cy - 80; i < cy + 80; i += 10) {
+                ctx.moveTo(originX - 20, i);
+                ctx.lineTo(originX - 35, i + 15);
+            }
+            ctx.stroke();
+
+            // Suelo
+            ctx.fillRect(originX - 20, cy + blockH / 2, canvas.width - originX + 20, 10);
+            // Eje de equilibrio (línea punteada)
+            ctx.beginPath();
+            ctx.strokeStyle = '#94a3b8';
+            ctx.setLineDash([5, 5]);
+            ctx.moveTo(eqX, cy - 80);
+            ctx.lineTo(eqX, cy + 80);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '12px Inter';
+            ctx.fillText("x = 0", eqX - 12, cy - 85);
+
+            // 2. Dibujar Resorte (Zig Zag)
+            ctx.beginPath();
+            ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--spring-color').trim();
+            ctx.lineWidth = 4;
+            ctx.lineJoin = 'round';
+            ctx.moveTo(originX, cy);
+
+            const numCoils = 15;
+            const springSpan = visualX - blockW / 2 - originX;
+            const coilW = springSpan / numCoils;
+            const coilH = 20;
+
+            for (let i = 0; i < numCoils; i++) {
+                ctx.lineTo(originX + i * coilW + coilW * 0.25, cy - coilH);
+                ctx.lineTo(originX + i * coilW + coilW * 0.75, cy + coilH);
+            }
+            ctx.lineTo(visualX - blockW / 2, cy);
+            ctx.stroke();
+
+            // 3. Dibujar Bloque
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--block-color').trim();
+            ctx.shadowColor = 'rgba(99, 102, 241, 0.4)';
+            ctx.shadowBlur = 15;
+            ctx.fillRect(visualX - blockW / 2, cy - blockH / 2, blockW, blockH);
+            ctx.shadowBlur = 0; // reset
+
+            // Borde bloque
+            ctx.strokeStyle = '#4f46e5';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(visualX - blockW / 2, cy - blockH / 2, blockW, blockH);
+
+            // Punto de masa central
+            ctx.fillStyle = '#1e293b';
+            ctx.beginPath();
+            ctx.arc(visualX, cy, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 4. Vector Fuerza Elástica (F = -kx)
+            drawForceVector(visualX, cy);
+        }
+
+        function drawForceVector(x, y) {
+            const F = -physics.k * physics.x;
+            if (Math.abs(F) < 0.1 && !physics.isDragging) return; // Ocultar si muy pequeña
+
+            // Factor de escala visual para el vector (1 N = n pixels)
+            const visualScale = 2 * physics.forceScale;
+            const vectorLen = F * visualScale;
+
+            const color = getComputedStyle(document.documentElement).getPropertyValue('--vector-force').trim();
+
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 3;
+            ctx.moveTo(x, y - 40); // Dibujar un poco arriba del centro
+            ctx.lineTo(x + vectorLen, y - 40);
+            ctx.stroke();
+
+            // Punta flecha
+            ctx.beginPath();
+            const sign = Math.sign(vectorLen);
+            ctx.moveTo(x + vectorLen, y - 40);
+            ctx.lineTo(x + vectorLen - sign * 10, y - 45);
+            ctx.lineTo(x + vectorLen - sign * 10, y - 35);
+            ctx.fill();
+
+            // Etiqueta
+            ctx.font = '14px Inter';
+            ctx.fillText('Fs', x + vectorLen / 2 - 8, y - 50);
+        }
+
+        // --- ACTUALIZAR DATOS ---
+        function updateDataPanel() {
+            document.getElementById('val_x').textContent = physics.x.toFixed(2);
+            document.getElementById('val_v').textContent = physics.v.toFixed(2);
+            document.getElementById('val_a').textContent = physics.a.toFixed(2);
+
+            const F = -physics.k * physics.x;
+            document.getElementById('val_f').textContent = F.toFixed(2);
+
+            const U = 0.5 * physics.k * physics.x * physics.x;
+            const K = 0.5 * physics.m * physics.v * physics.v;
+            document.getElementById('val_k_e').textContent = K.toFixed(2);
+            document.getElementById('val_u').textContent = U.toFixed(2);
+        }
+
+        // --- BUCLE PRINCIPAL ---
+        function loop(timestamp) {
+            let dt = (timestamp - lastTime) / 1000;
+            if (dt > 0.1) dt = 0.1; // Limitar salto
+            lastTime = timestamp;
+
+            updatePhysics(dt);
+            drawSimulation();
+
+            if (!physics.isPaused && !physics.isDragging) {
+                updateDataPanel();
+                if (modalActive) updatePlotsRealtime();
+            }
+
+            requestAnimationFrame(loop);
+        }
+
+        // --- PLOTLY GRÁFICOS (Estilo GeoGebra) ---
+        let modalActive = false;
+
+        // Estilo común "Papel Milimetrado/GeoGebra"
+        const geogebraLayout = {
+            plot_bgcolor: '#ffffff',
+            paper_bgcolor: '#ffffff',
+            margin: { t: 20, r: 20, b: 40, l: 50 },
+            font: { family: 'Inter', color: '#334155' },
+            xaxis: {
+                title: 't (s)',
+                gridcolor: '#e2e8f0', // Gris claro
+                zerolinecolor: '#64748b', // Eje más oscuro
+                zerolinewidth: 2,
+                showgrid: true,
+                dtick: 1 // Ticks estilo cuadriculado
+            },
+            yaxis: {
+                gridcolor: '#e2e8f0',
+                zerolinecolor: '#64748b',
+                zerolinewidth: 2,
+                showgrid: true
+            },
+            hovermode: 'closest',
+            dragmode: 'pan' // Permitir arrastrar/pan
+        };
+
+        const plotlyConfig = {
+            responsive: true,
+            displayModeBar: true,
+            modeBarButtonsToRemove: ['lasso2d', 'select2d'],
+            displaylogo: false
+        };
+
+        function initPlotly() {
+            const traceX = { x: history.t, y: history.x, mode: 'lines', name: 'x(t)', line: { color: '#06b6d4', width: 2 } };
+            const traceV = { x: history.t, y: history.v, mode: 'lines', name: 'v(t)', line: { color: '#10b981', width: 2 } };
+            const traceA = { x: history.t, y: history.a, mode: 'lines', name: 'a(t)', line: { color: '#f59e0b', width: 2 } };
+            const traceK = { x: history.t, y: history.K, mode: 'lines', name: 'K(t)', line: { color: '#a855f7', width: 2 } };
+            const traceU = { x: history.t, y: history.U, mode: 'lines', name: 'U(t)', line: { color: '#ec4899', width: 2, dash: 'dot' } };
+
+            Plotly.newPlot('plot_x', [traceX], { ...geogebraLayout, yaxis: { ...geogebraLayout.yaxis, title: 'x (m)' } }, plotlyConfig);
+            Plotly.newPlot('plot_v', [traceV], { ...geogebraLayout, yaxis: { ...geogebraLayout.yaxis, title: 'v (m/s)' } }, plotlyConfig);
+            Plotly.newPlot('plot_a', [traceA], { ...geogebraLayout, yaxis: { ...geogebraLayout.yaxis, title: 'a (m/s²)' } }, plotlyConfig);
+            Plotly.newPlot('plot_e', [traceK, traceU], { ...geogebraLayout, yaxis: { ...geogebraLayout.yaxis, title: 'Energía (J)' } }, plotlyConfig);
+        }
+
+        function updatePlotsRealtime() {
+            if (history.t.length === 0) return;
+
+            const updateX = { x: [history.t], y: [history.x] };
+            const updateV = { x: [history.t], y: [history.v] };
+            const updateA = { x: [history.t], y: [history.a] };
+            const updateE = { x: [history.t, history.t], y: [history.K, history.U] };
+
+            // Update smoothly
+            Plotly.update('plot_x', updateX);
+            Plotly.update('plot_v', updateV);
+            Plotly.update('plot_a', updateA);
+            Plotly.update('plot_e', updateE);
+
+            // Relayout if needed to follow time (auto scroll)
+            if (history.t[history.t.length - 1] > 10) {
+                const layoutUpdate = {
+                    'xaxis.range': [history.t[history.t.length - 1] - 10, history.t[history.t.length - 1] + 1]
+                };
+                Plotly.relayout('plot_x', layoutUpdate);
+                Plotly.relayout('plot_v', layoutUpdate);
+                Plotly.relayout('plot_a', layoutUpdate);
+                Plotly.relayout('plot_e', layoutUpdate);
+            }
+        }
+
+        // --- MANEJO DE MODALES ---
+        function openModal() {
+            document.getElementById('graphsModal').classList.add('active');
+            modalActive = true;
+            initPlotly(); // Re-render for proper sizing inside modal
+        }
+
+        function closeModal() {
+            document.getElementById('graphsModal').classList.remove('active');
+            modalActive = false;
+        }
+
+        // Boot
+        calculateAngularFreq();
+        resetSimulation();
+        requestAnimationFrame(loop);
+
+    </script>
+</body>
+
+</html>

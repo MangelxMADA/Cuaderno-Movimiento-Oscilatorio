@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Masa-Resorte · Monitor de Energía</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- KaTeX para las fórmulas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* ═══════ THEME VARIABLES ═══════ */
+        :root {
+            --pri: #6366f1;
+            --pri-l: #818cf8;
+            --pri-d: #4f46e5;
+            --acc: #06b6d4;
+            --suc: #10b981;
+            --wrn: #f59e0b;
+            --dng: #ef4444;
+            --rad: 12px;
+            --tr: all .3s cubic-bezier(.4, 0, .2, 1);
+            --sidebar-w: 320px;
+        }
+
+        [data-theme="dark"] {
+            --bg: #070b14;
+            --bg2: #0f172a;
+            --bg3: rgba(30, 41, 59, .82);
+            --txt: #f1f5f9;
+            --txt2: #94a3b8;
+            --txt3: #64748b;
+            --brd: rgba(148, 163, 184, .12);
+            --canvas-bg: #0c1220;
+            --grid-major: rgba(6, 182, 212, .12);
+            --grid-minor: rgba(6, 182, 212, .05);
+            --axis-color: rgba(148, 163, 184, .6);
+        }
+
+        [data-theme="light"] {
+            --bg: #f8fafc;
+            --bg2: #ffffff;
+            --bg3: rgba(255, 255, 255, .92);
+            --txt: #1e293b;
+            --txt2: #475569;
+            --txt3: #64748b;
+            --brd: rgba(100, 116, 139, .15);
+            --canvas-bg: #ffffff;
+            --grid-major: rgba(6, 182, 212, .18);
+            --grid-minor: rgba(6, 182, 212, .07);
+            --axis-color: rgba(51, 65, 85, .5);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--txt);
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: background .4s, color .4s;
+        }
+
+        /* ═══════ HEADER ═══════ */
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            height: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            background: var(--bg3);
+            backdrop-filter: blur(18px);
+            border-bottom: 1px solid var(--brd);
+        }
+
+        .top-bar .left {
+            display: flex;
+            align-items: center;
+            gap: .8rem;
+        }
+
+        .hamburger {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--txt);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: var(--tr);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hamburger:hover {
+            background: rgba(99, 102, 241, .12);
+        }
+
+        .top-bar h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--pri-l), var(--acc));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .theme-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--txt);
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: var(--tr);
+        }
+
+        .theme-btn:hover {
+            background: rgba(99, 102, 241, .12);
+        }
+
+        /* ═══════ SIDEBAR ═══════ */
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 199;
+            background: rgba(0, 0, 0, .35);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .3s;
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: calc(-1 * var(--sidebar-w) - 20px);
+            bottom: 0;
+            z-index: 200;
+            width: var(--sidebar-w);
+            padding: 65px 0 1rem;
+            background: var(--bg2);
+            border-right: 1px solid var(--brd);
+            overflow-y: auto;
+            transition: left .3s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        .sidebar.open {
+            left: 0;
+        }
+
+        .sb-section {
+            padding: .8rem 1.2rem;
+            border-bottom: 1px solid var(--brd);
+        }
+
+        .sb-section h3 {
+            font-size: .8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--acc);
+            margin-bottom: .8rem;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+
+        .ctrl-group {
+            display: flex;
+            flex-direction: column;
+            gap: .3rem;
+            margin-bottom: .8rem;
+        }
+
+        .ctrl-group label {
+            font-size: .75rem;
+            font-weight: 500;
+            color: var(--txt2);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ctrl-group label span {
+            color: var(--pri-l);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: .8rem;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 5px;
+            border-radius: 3px;
+            background: rgba(148, 163, 184, .20);
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--pri);
+            cursor: pointer;
+            box-shadow: 0 0 6px rgba(99, 102, 241, .4);
+        }
+
+        input[type=color] {
+            width: 26px;
+            height: 26px;
+            border: 1px solid var(--brd);
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 0;
+            background: transparent;
+        }
+
+        .color-row {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            margin-bottom: .6rem;
+        }
+
+        .color-row label {
+            font-size: .75rem;
+            color: var(--txt2);
+            min-width: 100px;
+        }
+
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: .6rem;
+        }
+
+        .toggle-row span {
+            font-size: .75rem;
+            color: var(--txt2);
+        }
+
+        .toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: rgba(148, 163, 184, .2);
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            transition: var(--tr);
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            transition: var(--tr);
+        }
+
+        .toggle.on {
+            background: var(--suc);
+        }
+
+        .toggle.on::after {
+            left: 22px;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: .5rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: .6rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            transition: var(--tr);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .4rem;
+            font-size: .85rem;
+        }
+
+        .btn-suc {
+            background: linear-gradient(135deg, var(--suc), #059669);
+        }
+
+        .btn-wrn {
+            background: linear-gradient(135deg, var(--wrn), #d97706);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.1);
+        }
+
+        /* ═══════ MAIN LAYOUT ═══════ */
+        .main {
+            padding-top: 75px;
+            padding-bottom: 2rem;
+            padding-left: 2rem;
+            padding-right: 2rem;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 1.5rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 1024px) {
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Left Column */
+        .left-col {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .panel {
+            background: var(--bg3);
+            backdrop-filter: blur(14px);
+            border: 1px solid var(--brd);
+            border-radius: var(--rad);
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .panel-header {
+            padding: .8rem 1.2rem;
+            border-bottom: 1px solid var(--brd);
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            background: rgba(0, 0, 0, .15);
+        }
+
+        [data-theme="light"] .panel-header {
+            background: rgba(0, 0, 0, .02);
+        }
+
+        .panel-header h2 {
+            font-size: .95rem;
+            font-weight: 600;
+            color: var(--txt);
+        }
+
+        .canvas-wrap {
+            position: relative;
+            width: 100%;
+            border-bottom: 1px solid var(--brd);
+        }
+
+        #energyCanvas {
+            height: 380px;
+            width: 100%;
+            display: block;
+            background: var(--canvas-bg);
+        }
+
+        #barsCanvas {
+            height: 160px;
+            width: 100%;
+            display: block;
+            background: var(--canvas-bg);
+        }
+
+        #historyCanvas {
+            height: 260px;
+            width: 100%;
+            display: block;
+            background: var(--canvas-bg);
+        }
+
+        /* Right Column (Info Panels) */
+        .right-col {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .telemetry-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: .8rem;
+            padding: 1.2rem;
+        }
+
+        .t-card {
+            background: var(--bg2);
+            border: 1px solid var(--brd);
+            border-radius: 8px;
+            padding: .8rem;
+            text-align: left;
+        }
+
+        .t-lbl {
+            font-size: .7rem;
+            color: var(--txt2);
+            text-transform: uppercase;
+            margin-bottom: .2rem;
+        }
+
+        .t-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--txt);
+            display: flex;
+            align-items: baseline;
+            gap: .3rem;
+        }
+
+        .t-unit {
+            font-size: .75rem;
+            color: var(--txt3);
+        }
+
+        .formula-section {
+            padding: 1.2rem;
+        }
+
+        .formula-block {
+            margin-bottom: 1rem;
+        }
+
+        .formula-block:last-child {
+            margin-bottom: 0;
+        }
+
+        .f-title {
+            font-size: .8rem;
+            color: var(--txt2);
+            margin-bottom: .5rem;
+            font-weight: 500;
+        }
+
+        .f-math {
+            background: var(--bg2);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--brd);
+            font-size: 1.05rem;
+            overflow-x: auto;
+        }
+
+        .legend-row {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            font-size: .8rem;
+            margin-top: .6rem;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="left">
+            <button class="hamburger" id="menuBtn" title="Panel de configuración"><i class="fas fa-bars"></i></button>
+            <h1><i class="fas fa-wave-square" style="margin-right:.4rem"></i> Dinámica de la Energía elástica</h1>
+        </div>
+        <div class="right">
+            <button class="theme-btn" id="themeBtn" title="Cambiar tema"><i class="fas fa-moon"
+                    id="themeIcon"></i></button>
+        </div>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar Configuration -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sb-section">
+            <h3><i class="fas fa-play-circle"></i> Simulación</h3>
+            <div class="btn-row">
+                <button class="btn btn-suc" id="btnPlay"><i class="fas fa-play" id="playIcon"></i> <span
+                        id="playLabel">Iniciar</span></button>
+                <button class="btn btn-wrn" id="btnReset"><i class="fas fa-stop"></i> Detener</button>
+            </div>
+            <div class="ctrl-group" style="margin-top:.8rem">
+                <label>Velocidad Simul. <span id="vSpeed">1.0×</span></label>
+                <input type="range" id="sSpeed" min="0.1" max="2" step="0.1" value="1">
+            </div>
+        </div>
+
+        <div class="sb-section">
+            <h3><i class="fas fa-sliders-h"></i> Parámetros</h3>
+            <div class="ctrl-group">
+                <label>Amplitud (A) <span id="vA">30 cm</span></label>
+                <input type="range" id="sA" min="5" max="50" step="1" value="30">
+            </div>
+            <div class="ctrl-group">
+                <label>Constante (k) <span id="vK">40 N/m</span></label>
+                <input type="range" id="sK" min="5" max="100" step="1" value="40">
+            </div>
+            <div class="ctrl-group">
+                <label>Masa (m) <span id="vM">10 kg</span></label>
+                <input type="range" id="sM" min="1" max="50" step="1" value="10">
+            </div>
+            <div class="ctrl-group">
+                <label>Energía Total (E) <span id="vE">1.80 J</span></label>
+                <input type="range" id="sE" min="0.1" max="15" step="0.1" value="1.80">
+            </div>
+        </div>
+
+        <div class="sb-section">
+            <h3><i class="fas fa-palette"></i> Colores y Estilos</h3>
+            <div class="color-row">
+                <label>Parábola U(x)</label>
+                <input type="color" id="cParabola" value="#06b6d4">
+            </div>
+            <div class="color-row">
+                <label>Energía Total (E)</label>
+                <input type="color" id="cE" value="#f59e0b">
+            </div>
+            <div class="color-row">
+                <label>E. Cinética (Ek)</label>
+                <input type="color" id="cKE" value="#10b981">
+            </div>
+            <div class="color-row">
+                <label>E. Potencial (Uk)</label>
+                <input type="color" id="cPE" value="#3b82f6">
+            </div>
+            <div class="color-row">
+                <label>Partícula</label>
+                <input type="color" id="cParticle" value="#ffffff">
+            </div>
+            <div class="color-row">
+                <label>Vector Fuerza</label>
+                <input type="color" id="cForce" value="#ef4444">
+            </div>
+            <div class="ctrl-group" style="margin-top: .8rem">
+                <label>Escala Fuerza <span id="vFScale">1.0×</span></label>
+                <input type="range" id="sFScale" min="0.1" max="5" step="0.1" value="1.0">
+            </div>
+            <div class="toggle-row" style="margin-top: .8rem">
+                <span>Mostrar Vector Fuerza</span>
+                <button class="toggle on" id="tForce"></button>
+            </div>
+        </div>
+    </aside>
+
+    <div class="main">
+        <div class="grid-container">
+            <!-- LEFT COLUMN: GRAPHICS -->
+            <div class="left-col">
+                <!-- Parabola Diagram -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <i class="fas fa-chart-line" style="color:var(--acc)"></i>
+                        <h2>Diagrama de Energía Potencial</h2>
+                    </div>
+                    <div class="canvas-wrap">
+                        <canvas id="energyCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Energy Monitor (Bars) -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <i class="fas fa-server" style="color:var(--pri-l)"></i>
+                        <h2>Monitor de Energía</h2>
+                    </div>
+                    <div class="canvas-wrap">
+                        <canvas id="barsCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Time Series Chart -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <i class="fas fa-wave-square" style="color:var(--wrn)"></i>
+                        <h2>Registrador Gráfico (Historial)</h2>
+                    </div>
+                    <div class="canvas-wrap" style="padding: .5rem">
+                        <div style="display: flex; gap: 1rem; padding-left: 1rem; margin-bottom: .2rem">
+                            <div class="legend-row">
+                                <div class="legend-color" id="legEk" style="background: #10b981"></div>
+                                <span>Energía Cinética (Ek)</span>
+                            </div>
+                            <div class="legend-row">
+                                <div class="legend-color" id="legUk" style="background: #3b82f6"></div>
+                                <span>E. Potencial Elástica (Uk)</span>
+                            </div>
+                            <div class="legend-row">
+                                <div class="legend-color" id="legE" style="background: #f59e0b"></div>
+                                <span>Energía Total (E)</span>
+                            </div>
+                        </div>
+                        <canvas id="historyCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: TELEMETRY & FORMULAS -->
+            <div class="right-col">
+                <!-- Instant Telemetry -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <i class="fas fa-tachometer-alt" style="color:var(--suc)"></i>
+                        <h2>Telemetría Instantánea</h2>
+                    </div>
+                    <div class="telemetry-grid">
+                        <div class="t-card">
+                            <div class="t-lbl">Posición x</div>
+                            <div class="t-val"><span id="tX">0.00</span> <span class="t-unit">m</span></div>
+                        </div>
+                        <div class="t-card">
+                            <div class="t-lbl">Velocidad v</div>
+                            <div class="t-val" style="color: var(--pri-l)"><span id="tV">0.00</span> <span
+                                    class="t-unit">m/s</span></div>
+                        </div>
+                        <div class="t-card">
+                            <div class="t-lbl">Fuerza F = -kx</div>
+                            <div class="t-val" style="color: var(--dng)"><span id="tF">0.00</span> <span
+                                    class="t-unit">N</span></div>
+                        </div>
+                        <div class="t-card">
+                            <div class="t-lbl">Aceleración a</div>
+                            <div class="t-val"><span id="tA">0.00</span> <span class="t-unit">m/s²</span></div>
+                        </div>
+                        <div class="t-card">
+                            <div class="t-lbl">Período T</div>
+                            <div class="t-val"><span id="tT">0.00</span> <span class="t-unit">s</span></div>
+                        </div>
+                        <div class="t-card">
+                            <div class="t-lbl">Frec. Angular ω</div>
+                            <div class="t-val"><span id="tW">0.00</span> <span class="t-unit">rad/s</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Static Formulas -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <i class="fas fa-book" style="color:var(--acc)"></i>
+                        <h2>Modelo y Fórmulas Teóricas</h2>
+                    </div>
+                    <div class="formula-section">
+                        <div class="formula-block">
+                            <div class="f-title">Movimiento Armónico Simple:</div>
+                            <div class="f-math" id="eqMove"></div>
+                        </div>
+                        <div class="formula-block">
+                            <div class="f-title">Fórmulas de Energía:</div>
+                            <div class="f-math" id="eqEner"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dynamic Calculation -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <i class="fas fa-calculator" style="color:var(--wrn)"></i>
+                        <h2>Cálculo Dinámico</h2>
+                    </div>
+                    <div class="formula-section">
+                        <div class="formula-block">
+                            <div class="f-title">Energía Cinética Instantánea:</div>
+                            <div class="f-math" id="dynEk" style="min-height: 48px; border-left: 3px solid var(--suc)">
+                            </div>
+                        </div>
+                        <div class="formula-block">
+                            <div class="f-title">Energía Potencial Instantánea:</div>
+                            <div class="f-math" id="dynUk"
+                                style="min-height: 48px; border-left: 3px solid var(--pri-l)"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN LOGIC -->
+    <script>
+        // ─── Theme & Sidebar ───
+        const html = document.documentElement;
+        const themeBtn = document.getElementById('themeBtn');
+        const themeIcon = document.getElementById('themeIcon');
+        themeBtn.onclick = () => {
+            const isDark = html.getAttribute('data-theme') === 'dark';
+            html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+            themeIcon.className = isDark ? 'fas fa-moon' : 'fas fa-sun';
+        };
+
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const menuBtn = document.getElementById('menuBtn');
+        function openSidebar() { sidebar.classList.add('open'); overlay.classList.add('active'); }
+        function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('active'); }
+        menuBtn.onclick = () => sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+        overlay.onclick = closeSidebar;
+
+        const tForceBtn = document.getElementById('tForce');
+        let showForce = true;
+        tForceBtn.onclick = () => { showForce = !showForce; tForceBtn.classList.toggle('on'); };
+
+        // ─── State ───
+        const S = {
+            A: 0.30, k: 40, m: 10, E: 1.80,
+            x: 0.30, v: 0, a: 0,
+            omega: 2, T: 3.14,
+            t: 0, speed: 1, running: false, fScale: 1.0,
+
+            // Colors
+            cParabola: '#06b6d4',
+            cE: '#f59e0b',
+            cKE: '#10b981',
+            cPE: '#3b82f6',
+            cParticle: '#ffffff',
+            cForce: '#ef4444'
+        };
+
+        const historyData = [];
+        const MAX_HISTORY = 400;
+
+        // ─── Physics Calculation ───
+        function recalcDerived() {
+            S.omega = Math.sqrt(S.k / S.m);
+            S.T = 2 * Math.PI / S.omega;
+            S.A = Math.sqrt(2 * S.E / S.k);
+            // Sliders update
+            document.getElementById('sA').value = S.A * 100;
+            document.getElementById('vA').textContent = (S.A * 100).toFixed(0) + ' cm';
+        }
+
+        function recalcFromAmplitude() {
+            S.E = 0.5 * S.k * S.A * S.A;
+            document.getElementById('sE').value = S.E;
+            document.getElementById('vE').textContent = S.E.toFixed(2) + ' J';
+            recalcDerived();
+        }
+
+        // Handlers
+        document.getElementById('sA').oninput = function () { S.A = +this.value / 100; recalcFromAmplitude(); };
+        document.getElementById('sK').oninput = function () { S.k = +this.value; document.getElementById('vK').textContent = S.k + ' N/m'; recalcFromAmplitude(); };
+        document.getElementById('sM').oninput = function () { S.m = +this.value; document.getElementById('vM').textContent = S.m + ' kg'; recalcDerived(); };
+        document.getElementById('sE').oninput = function () { S.E = +this.value; document.getElementById('vE').textContent = S.E.toFixed(2) + ' J'; recalcDerived(); };
+        document.getElementById('sSpeed').oninput = function () { S.speed = +this.value; document.getElementById('vSpeed').textContent = S.speed.toFixed(1) + '×'; };
+        document.getElementById('sFScale').oninput = function () { S.fScale = +this.value; document.getElementById('vFScale').textContent = S.fScale.toFixed(1) + '×'; if (!S.running) renderFrame(); };
+
+        // Colors
+        ['cParabola', 'cE', 'cKE', 'cPE', 'cParticle', 'cForce'].forEach(id => {
+            document.getElementById(id).oninput = function () {
+                S[id] = this.value;
+                // update legends
+                if (id === 'cKE') document.getElementById('legEk').style.background = this.value;
+                if (id === 'cPE') document.getElementById('legUk').style.background = this.value;
+                if (id === 'cE') document.getElementById('legE').style.background = this.value;
+            };
+        });
+
+        document.getElementById('btnPlay').onclick = () => {
+            S.running = !S.running;
+            document.getElementById('playIcon').className = S.running ? 'fas fa-pause' : 'fas fa-play';
+            document.getElementById('playLabel').textContent = S.running ? 'Pausar' : 'Iniciar';
+            if (S.running) lastTS = 0;
+        };
+        document.getElementById('btnReset').onclick = () => {
+            S.running = false; S.t = 0; lastTS = 0; S.x = S.A; S.v = 0;
+            historyData.length = 0;
+            document.getElementById('playIcon').className = 'fas fa-play';
+            document.getElementById('playLabel').textContent = 'Iniciar';
+            renderFrame();
+        };
+
+        // ─── KaTeX Rendering ───
+        katex.render(`x(t) = A \\cos(\\omega t)`, document.getElementById('eqMove'), { displayMode: true });
+        katex.render(`E_k = \\frac{1}{2}mv^2, \\; U_k = \\frac{1}{2}kx^2, \\; E = \\frac{1}{2}kA^2`, document.getElementById('eqEner'), { displayMode: true });
+
+        function updateDynamicFormulas(ek, uk) {
+            let texEk = `E_k = \\frac{1}{2}(${S.m.toFixed(1)})(${Math.abs(S.v).toFixed(2)})^2 = ${ek.toFixed(2)}\\,\\text{J}`;
+            let texUk = `U_k = \\frac{1}{2}(${S.k.toFixed(1)})(${Math.abs(S.x).toFixed(2)})^2 = ${uk.toFixed(2)}\\,\\text{J}`;
+            katex.render(texEk, document.getElementById('dynEk'), { displayMode: true });
+            katex.render(texUk, document.getElementById('dynUk'), { displayMode: true });
+        }
+
+        // ─── Canvases ───
+        const cvsEnergy = document.getElementById('energyCanvas'); const ctxE = cvsEnergy.getContext('2d');
+        const cvsBars = document.getElementById('barsCanvas'); const ctxB = cvsBars.getContext('2d');
+        const cvsHist = document.getElementById('historyCanvas'); const ctxH = cvsHist.getContext('2d');
+
+        let wE, hE, wB, hB, wH, hH;
+        function resize() {
+            const r = devicePixelRatio || 1;
+            const setSize = (cvs, ctx) => {
+                const rect = cvs.getBoundingClientRect();
+                cvs.width = rect.width * r; cvs.height = rect.height * r;
+                ctx.setTransform(r, 0, 0, r, 0, 0);
+                return { w: rect.width, h: rect.height };
+            };
+            ({ w: wE, h: hE } = setSize(cvsEnergy, ctxE));
+            ({ w: wB, h: hB } = setSize(cvsBars, ctxB));
+            ({ w: wH, h: hH } = setSize(cvsHist, ctxH));
+        }
+        window.addEventListener('resize', resize);
+        setTimeout(resize, 100);
+
+        function roundRect(ctx, x, y, w, h, r) {
+            if (h < 0) { y += h; h = Math.abs(h); }
+            if (w < 0) { x += w; w = Math.abs(w); }
+            if (h === 0 || w === 0) return;
+            r = Math.min(r, w / 2, h / 2);
+            ctx.beginPath();
+            ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+        }
+
+        // ─── Draw Functions ───
+        function drawParabola(PE, KE) {
+            ctxE.clearRect(0, 0, wE, hE);
+            const isDark = html.getAttribute('data-theme') === 'dark';
+            const axisC = isDark ? 'rgba(255,255,255,.2)' : 'rgba(0,0,0,.2)';
+            const textC = isDark ? '#94a3b8' : '#475569';
+
+            const mLeft = 50, mR = 30, mT = 30, mB = 40;
+            const pW = wE - mLeft - mR, pH = hE - mT - mB;
+
+            const maxXCm = Math.max(40, S.A * 100 * 1.2);
+            const maxE = Math.max(S.E * 1.5, 2.5);
+
+            const sx = cm => mLeft + (cm - (-maxXCm)) / (maxXCm - (-maxXCm)) * pW;
+            const sy = e => mT + (1 - e / maxE) * pH;
+
+            // axes
+            const y0 = sy(0), x0 = sx(0);
+            ctxE.strokeStyle = axisC; ctxE.lineWidth = 1;
+            ctxE.beginPath(); ctxE.moveTo(mLeft, y0); ctxE.lineTo(wE - mR, y0); ctxE.stroke();
+            ctxE.setLineDash([4, 4]); ctxE.beginPath(); ctxE.moveTo(x0, mT); ctxE.lineTo(x0, hE - mB); ctxE.stroke(); ctxE.setLineDash([]);
+
+            // labels
+            ctxE.fillStyle = textC; ctxE.font = '11px Inter'; ctxE.textAlign = 'center';
+            ctxE.fillText('x = 0', x0, y0 + 15);
+            ctxE.textAlign = 'right'; ctxE.fillText('E (J)', mLeft - 10, mT);
+
+            // draw U(x)
+            ctxE.strokeStyle = S.cParabola; ctxE.lineWidth = 2.5; ctxE.lineJoin = 'round';
+            ctxE.beginPath();
+            for (let cm = -maxXCm; cm <= maxXCm; cm += 1) {
+                let j = 0.5 * S.k * (cm / 100) ** 2;
+                let px = sx(cm), py = sy(j);
+                if (px === mLeft) ctxE.moveTo(px, py); else ctxE.lineTo(px, py);
+            }
+            ctxE.stroke();
+
+            // draw E total line
+            let eLineY = sy(S.E);
+            ctxE.strokeStyle = S.cE; ctxE.lineWidth = 2;
+            ctxE.beginPath(); ctxE.moveTo(mLeft, eLineY); ctxE.lineTo(wE - mR, eLineY); ctxE.stroke();
+
+            // draw cotas +- A
+            ctxE.strokeStyle = axisC; ctxE.setLineDash([3, 3]); ctxE.lineWidth = 1;
+            [sx(-S.A * 100), sx(S.A * 100)].forEach(lx => {
+                ctxE.beginPath(); ctxE.moveTo(lx, y0); ctxE.lineTo(lx, eLineY); ctxE.stroke();
+            });
+            ctxE.setLineDash([]);
+
+            // particle position
+            let px = sx(S.x * 100);
+
+            // vertical PE / KE cota
+            ctxE.lineWidth = 3.5;
+            let peY = sy(PE);
+            if (PE > 0.01) { ctxE.strokeStyle = S.cPE; ctxE.beginPath(); ctxE.moveTo(px, y0); ctxE.lineTo(px, peY); ctxE.stroke(); }
+            if (KE > 0.01) { ctxE.strokeStyle = S.cKE; ctxE.beginPath(); ctxE.moveTo(px, peY); ctxE.lineTo(px, eLineY); ctxE.stroke(); }
+
+            // Particle
+            ctxE.fillStyle = isDark ? '#fff' : '#0f172a';
+            if (S.cParticle !== '#ffffff') ctxE.fillStyle = S.cParticle;
+            ctxE.beginPath(); ctxE.arc(px, y0, 6, 0, Math.PI * 2); ctxE.fill();
+
+            // Force Vector
+            if (showForce) {
+                const F = -S.k * S.x;
+                if (Math.abs(F) > 0.05) {
+                    const fLen = F * 20 * S.fScale; // scale drawing
+                    const arrow = Math.min(8, Math.abs(fLen) * 0.3);
+                    const dir = Math.sign(F);
+                    ctxE.strokeStyle = S.cForce; ctxE.lineWidth = 2.5; ctxE.lineCap = 'round';
+
+                    // Draw arrow on x-axis
+                    let fxY = y0;
+                    ctxE.beginPath(); ctxE.moveTo(px, fxY); ctxE.lineTo(px + fLen, fxY); ctxE.stroke();
+
+                    // head
+                    ctxE.fillStyle = S.cForce;
+                    ctxE.beginPath(); ctxE.moveTo(px + fLen, fxY);
+                    ctxE.lineTo(px + fLen - dir * arrow, fxY - 4);
+                    ctxE.lineTo(px + fLen - dir * arrow, fxY + 4);
+                    ctxE.fill();
+
+                    // F text
+                    ctxE.fillStyle = S.cForce; ctxE.font = '11px JetBrains Mono'; ctxE.textAlign = 'center';
+                    ctxE.fillText('F', px + fLen / 2, fxY - 8);
+                }
+            }
+        }
+
+        function drawBars(PE, KE) {
+            ctxB.clearRect(0, 0, wB, hB);
+            const isDark = html.getAttribute('data-theme') === 'dark';
+            const textC = isDark ? '#f1f5f9' : '#1e293b';
+            const lblC = isDark ? '#94a3b8' : '#475569';
+
+            let pL = 140, pR = 60;
+            let barW = wB - pL - pR;
+            let gap = 20, barH = 18;
+            let startY = 30;
+
+            const maxE = Math.max(S.E * 1.1, 1);
+            const len = val => (val / maxE) * barW;
+
+            const bars = [
+                { id: 'E. Cinética (Ek)', val: KE, col: S.cKE },
+                { id: 'E. Potencial (Uk)', val: PE, col: S.cPE },
+                { id: 'Energía Total (E)', val: S.E, col: S.cE }
+            ];
+
+            bars.forEach((b, i) => {
+                let y = startY + i * (barH + gap);
+
+                // Label
+                ctxB.fillStyle = lblC; ctxB.font = '12px Inter'; ctxB.textAlign = 'right'; ctxB.textBaseline = 'middle';
+                ctxB.fillText(b.id, pL - 15, y + barH / 2);
+
+                // Track
+                ctxB.fillStyle = isDark ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.05)';
+                roundRect(ctxB, pL, y, barW, barH, 4); ctxB.fill();
+
+                // Fill
+                if (b.val > 0) {
+                    ctxB.fillStyle = b.col;
+                    roundRect(ctxB, pL, y, len(b.val), barH, 4); ctxB.fill();
+                }
+
+                // Value text
+                ctxB.fillStyle = textC; ctxB.font = '600 12px JetBrains Mono'; ctxB.textAlign = 'left';
+                ctxB.fillText(b.val.toFixed(2) + ' J', pL + len(b.val) + 8, y + barH / 2);
+            });
+        }
+
+        function drawHistory() {
+            ctxH.clearRect(0, 0, wH, hH);
+            if (historyData.length < 2) return;
+
+            const isDark = html.getAttribute('data-theme') === 'dark';
+            const gridC = isDark ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.05)';
+
+            let mL = 40, mR = 10, mT = 10, mB = 25;
+            let pW = wH - mL - mR, pH = hH - mT - mB;
+
+            const maxE = Math.max(S.E * 1.2, 1);
+            let sy = e => mT + (1 - e / maxE) * pH;
+
+            // draw limits
+            ctxH.strokeStyle = gridC; ctxH.lineWidth = 1;
+            ctxH.beginPath(); ctxH.moveTo(mL, sy(S.E)); ctxH.lineTo(wH - mR, sy(S.E)); ctxH.stroke();
+            ctxH.beginPath(); ctxH.moveTo(mL, sy(0)); ctxH.lineTo(wH - mR, sy(0)); ctxH.stroke();
+
+            ctxH.fillStyle = isDark ? '#94a3b8' : '#475569';
+            ctxH.font = '10px Inter'; ctxH.textAlign = 'right'; ctxH.textBaseline = 'middle';
+            ctxH.fillText(S.E.toFixed(1), mL - 5, sy(S.E));
+            ctxH.fillText('0', mL - 5, sy(0));
+
+            let tMax = historyData[historyData.length - 1].t;
+            let tMin = Math.max(0, tMax - 10); // Show last 10 seconds (in sim time)
+
+            // Filter visible points
+            let pts = historyData.filter(d => d.t >= tMin);
+            if (pts.length < 2) return;
+
+            let sx = t => mL + ((t - tMin) / 10) * pW;
+
+            const drawCurve = (key, color) => {
+                ctxH.strokeStyle = color; ctxH.lineWidth = 2; ctxH.lineJoin = 'round';
+                ctxH.beginPath();
+                pts.forEach((p, i) => {
+                    let px = sx(p.t), py = sy(p[key]);
+                    if (i === 0) ctxH.moveTo(px, py); else ctxH.lineTo(px, py);
+                });
+                ctxH.stroke();
+            };
+
+            drawCurve('ke', S.cKE);
+            drawCurve('pe', S.cPE);
+            drawCurve('e', S.cE);
+
+            // x axis label
+            ctxH.textAlign = 'center'; ctxH.fillText('Tiempo t (s)', mL + pW / 2, hH - 5);
+        }
+
+        // ─── Loop ───
+        let lastTS = 0;
+        let animFrameId = null;
+
+        function renderFrame(ts = 0) {
+            animFrameId = requestAnimationFrame(renderFrame);
+
+            if (S.running && lastTS) {
+                let dt = (ts - lastTS) / 1000;
+                dt = Math.min(dt, 0.05); // cap dt
+                S.t += dt * S.speed;
+
+                // physics
+                S.x = S.A * Math.cos(S.omega * S.t);
+                S.v = -S.A * S.omega * Math.sin(S.omega * S.t);
+                S.a = -S.A * S.omega * S.omega * Math.cos(S.omega * S.t);
+            }
+            if (ts) lastTS = ts;
+
+            let PE = 0.5 * S.k * S.x * S.x;
+            let KE = Math.max(0, S.E - PE); // Float corrections
+            let F = -S.k * S.x;
+
+            if (S.running) {
+                historyData.push({ t: S.t, ke: KE, pe: PE, e: S.E });
+                if (historyData.length > MAX_HISTORY) historyData.shift();
+            }
+
+            // Draw
+            if (wE) {
+                drawParabola(PE, KE);
+                drawBars(PE, KE);
+                drawHistory();
+            }
+
+            // Dom updates (Throttle UI to save reflows)
+            document.getElementById('tX').textContent = S.x.toFixed(2);
+            document.getElementById('tV').textContent = S.v.toFixed(2);
+            document.getElementById('tF').textContent = (+F).toFixed(2);
+            document.getElementById('tA').textContent = S.a.toFixed(2);
+            document.getElementById('tT').textContent = S.T.toFixed(2);
+            document.getElementById('tW').textContent = S.omega.toFixed(2);
+
+            updateDynamicFormulas(KE, PE);
+        }
+
+        // Run
+        recalcDerived();
+        renderFrame();
+
+    </script>
+</body>
+
+</html>

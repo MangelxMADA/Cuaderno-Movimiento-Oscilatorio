@@ -1,0 +1,1787 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movimiento Armónico Simple — MAS</title>
+
+    <!-- 🔤 Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@500;700&display=swap"
+        rel="stylesheet">
+
+    <!-- 🧮 KaTeX para renderizado matemático -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+    <!-- 🖼️ Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* ┌─────────────────────────────────────────┐
+           │ 🎨 VARIABLES CSS Y TEMAS                │
+           └─────────────────────────────────────────┘ */
+        :root {
+            /* Tema Claro por defecto */
+            --bg-body: #f4f7f6;
+            --bg-panel: rgba(255, 255, 255, 0.6);
+            --bg-panel-solid: #ffffff;
+            --text-main: #2d3436;
+            --text-muted: #636e72;
+            --border-glass: rgba(255, 255, 255, 0.4);
+            --shadow-neo: 5px 5px 15px #d1d9e6, -5px -5px 15px #ffffff;
+            --shadow-neo-inset: inset 4px 4px 10px #d1d9e6, inset -4px -4px 10px #ffffff;
+            --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+            --grid-main: rgba(0, 0, 0, 0.15);
+            --grid-sec: rgba(0, 0, 0, 0.05);
+            --axis-color: #2d3436;
+            --ribbon-bg: rgba(255, 255, 255, 0.8);
+
+            /* Colores Base */
+            --color-x: #ff4757;
+            /* Elongación */
+            --color-v: #2ed573;
+            /* Velocidad */
+            --color-a: #1e90ff;
+            /* Aceleración */
+            --color-accent: #7bed9f;
+        }
+
+        [data-theme="dark"] {
+            --bg-body: #0f172a;
+            --bg-panel: rgba(30, 41, 59, 0.6);
+            --bg-panel-solid: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #cbd5e1;
+            --border-glass: rgba(255, 255, 255, 0.05);
+            --shadow-neo: 5px 5px 15px #0b1120, -5px -5px 15px #131d34;
+            --shadow-neo-inset: inset 4px 4px 10px #0b1120, inset -4px -4px 10px #131d34;
+            --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            --grid-main: rgba(255, 255, 255, 0.15);
+            --grid-sec: rgba(255, 255, 255, 0.05);
+            --axis-color: #cbd5e1;
+            --ribbon-bg: rgba(15, 23, 42, 0.85);
+
+            --color-x: #ff6b81;
+            --color-v: #7bed9f;
+            --color-a: #70a1ff;
+        }
+
+        /* ┌─────────────────────────────────────────┐
+           │ RESET Y ESTRUCTURA BASE                 │
+           └─────────────────────────────────────────┘ */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-image: radial-gradient(circle at 50% 0%, rgba(123, 237, 159, 0.05) 0%, transparent 70%);
+        }
+
+        /* ┌─────────────────────────────────────────┐
+           │ 🎀 RIBBON SUPERIOR                      │
+           └─────────────────────────────────────────┘ */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 2rem;
+            background: var(--ribbon-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-glass);
+            box-shadow: var(--shadow-glass);
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--bg-body);
+            box-shadow: var(--shadow-neo);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .logo-icon svg {
+            color: var(--color-a);
+        }
+
+        h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--color-x), var(--color-v), var(--color-a));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% auto;
+            animation: gradientText 5s ease infinite;
+        }
+
+        @keyframes gradientText {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-icon {
+            background: var(--bg-body);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            color: var(--text-main);
+            box-shadow: var(--shadow-neo);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-icon:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            color: var(--color-a);
+        }
+
+        .btn-icon:active {
+            transform: scale(0.95);
+            box-shadow: var(--shadow-neo-inset);
+        }
+
+        /* ┌─────────────────────────────────────────┐
+           │ 📑 BARRA DE PESTAÑAS                    │
+           └─────────────────────────────────────────┘ */
+        .tabs-container {
+            display: flex;
+            justify-content: center;
+            padding: 1rem 0 0.5rem;
+            z-index: 10;
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--bg-panel);
+            border-radius: 30px;
+            padding: 5px;
+            box-shadow: var(--shadow-neo-inset);
+            backdrop-filter: blur(5px);
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 8px 25px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn.active {
+            background: var(--bg-body);
+            color: var(--color-a);
+            box-shadow: var(--shadow-neo);
+        }
+
+        /* ┌─────────────────────────────────────────┐
+           │ 🏗️ ÁREA PRINCIPAL (Layout)              │
+           └─────────────────────────────────────────┘ */
+        main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            padding: 1rem;
+            gap: 1rem;
+        }
+
+        /* Paneles de Controles */
+        .side-panel {
+            background: var(--bg-panel);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid var(--border-glass);
+            box-shadow: var(--shadow-glass);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .panel-izq {
+            width: 300px;
+            min-width: 200px;
+            max-width: 500px;
+        }
+
+        .panel-der {
+            width: 260px;
+            min-width: 200px;
+        }
+
+        /* Resizer */
+        .resizer {
+            width: 8px;
+            cursor: col-resize;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 -4px;
+            z-index: 5;
+        }
+
+        .resizer::after {
+            content: "⋮";
+            color: var(--text-muted);
+            font-size: 1.2rem;
+        }
+
+        .resizer:hover::after {
+            color: var(--color-a);
+        }
+
+        /* Contenido de Paneles */
+        .panel-section {
+            padding: 1.2rem;
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        .panel-section:last-child {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-family: 'Poppins';
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Controles (Sliders) */
+        .control-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .badge {
+            background: var(--bg-body);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            box-shadow: var(--shadow-neo-inset);
+            font-family: monospace;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            height: 20px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            border-radius: 3px;
+            background: var(--grid-main);
+            box-shadow: var(--shadow-neo-inset);
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--color-accent);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 0 10px var(--color-accent);
+        }
+
+        #slider-A::-webkit-slider-thumb {
+            background: var(--color-x);
+            box-shadow: 0 0 10px var(--color-x);
+        }
+
+        #slider-w::-webkit-slider-thumb {
+            background: var(--color-v);
+            box-shadow: 0 0 10px var(--color-v);
+        }
+
+        #slider-alpha::-webkit-slider-thumb {
+            background: var(--color-a);
+            box-shadow: 0 0 10px var(--color-a);
+        }
+
+        /* Toggles (iOS Style) */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider-toggle {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--grid-main);
+            transition: .4s cubic-bezier(0.4, 0.0, 0.2, 1);
+            border-radius: 24px;
+            box-shadow: var(--shadow-neo-inset);
+        }
+
+        .slider-toggle:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #fff;
+            transition: .4s cubic-bezier(0.4, 0.0, 0.2, 1);
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        input:checked+.slider-toggle {
+            background-color: var(--toggle-color, var(--color-accent));
+        }
+
+        input:checked+.slider-toggle:before {
+            transform: translateX(20px);
+        }
+
+        /* Controles de Animación */
+        .anim-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        .lcd-display {
+            background: #111;
+            color: #0f0;
+            font-family: monospace;
+            font-size: 1.2rem;
+            padding: 5px 15px;
+            border-radius: 5px;
+            border: 2px solid #333;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+            letter-spacing: 2px;
+        }
+
+        /* ┌─────────────────────────────────────────┐
+           │ 🖼️ PANEL CENTRAL (Canvas)               │
+           └─────────────────────────────────────────┘ */
+        .panel-central {
+            flex: 1;
+            display: flex;
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            background: var(--bg-panel-solid);
+            box-shadow: var(--shadow-neo);
+            border: 1px solid var(--border-glass);
+        }
+
+        .view-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            opacity: 1;
+            transition: opacity 0.5s;
+        }
+
+        .view-container.hidden {
+            opacity: 0;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: crosshair;
+        }
+
+        /* Herramientas Flotantes del Canvas */
+        .canvas-tools {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--bg-panel);
+            backdrop-filter: blur(8px);
+            border-radius: 8px;
+            border: 1px solid var(--border-glass);
+            display: flex;
+            flex-direction: column;
+            padding: 4px;
+            gap: 4px;
+            box-shadow: var(--shadow-glass);
+        }
+
+        .tool-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .tool-btn:hover {
+            background: var(--bg-body);
+            color: var(--color-a);
+        }
+
+        .tool-btn.active {
+            background: var(--color-a);
+            color: white;
+        }
+
+        /* Elemento Sorpresa: Ecuaciones en Vivo */
+        .live-equations {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: var(--bg-panel);
+            backdrop-filter: blur(8px);
+            padding: 10px 15px;
+            border-radius: 10px;
+            border: 1px solid var(--border-glass);
+            font-size: 0.9rem;
+            pointer-events: none;
+            box-shadow: var(--shadow-glass);
+        }
+
+        /* ┌─────────────────────────────────────────┐
+           │ 🎨 PANEL DERECHO (Estilos)              │
+           └─────────────────────────────────────────┘ */
+        .style-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.8rem;
+        }
+
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            padding: 0;
+            background: transparent;
+            overflow: hidden;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: 2px solid var(--border-glass);
+            border-radius: 50%;
+        }
+
+        select {
+            background: var(--bg-body);
+            color: var(--text-main);
+            border: 1px solid var(--border-glass);
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-family: 'Inter';
+            outline: none;
+        }
+
+        .btn-full {
+            width: 100%;
+            padding: 10px;
+            background: var(--color-a);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Poppins';
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-full:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(30, 144, 255, 0.4);
+        }
+
+        /* ┌─────────────────────────────────────────┐
+           │ 🦶 FOOTER & MODALS                      │
+           └─────────────────────────────────────────┘ */
+        footer {
+            text-align: center;
+            padding: 0.8rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: transparent;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: var(--bg-panel-solid);
+            color: var(--text-main);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: var(--shadow-glass);
+            position: relative;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .modal-close:hover {
+            color: #ff4757;
+            transform: rotate(90deg);
+        }
+
+        .modal-body h2 {
+            font-family: 'Poppins';
+            margin-bottom: 1rem;
+            color: var(--color-a);
+            border-bottom: 1px solid var(--border-glass);
+            padding-bottom: 5px;
+        }
+
+        .modal-body p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        .katex-display {
+            margin: 1em 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .panel-der {
+                display: none;
+                /* Simplificación para tablets */
+            }
+        }
+
+        @media (max-width: 768px) {
+            main {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+
+            .panel-izq,
+            .panel-der {
+                width: 100%;
+                max-width: none;
+                flex: none;
+            }
+
+            .resizer {
+                display: none;
+            }
+
+            .panel-central {
+                min-height: 400px;
+                flex: none;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+        /* Utilidad: Cursor Agarre */
+        .grabbing {
+            cursor: grabbing !important;
+        }
+
+        /* Confetti Canvas */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 🎀 HEADER -->
+    <header>
+        <div class="logo-container">
+            <div class="logo-icon" id="logo-trigger" title="Doble/Triple clic para sorpresa!">
+                <i data-lucide="activity"></i>
+            </div>
+            <h1>Simulador MAS</h1>
+        </div>
+        <div class="header-actions">
+            <button class="btn-icon" onclick="openModal('teoria-modal')" title="Teoría"><i
+                    data-lucide="book-open"></i></button>
+            <button class="btn-icon" onclick="openModal('ayuda-modal')" title="Ayuda"><i
+                    data-lucide="help-circle"></i></button>
+        </div>
+    </header>
+
+    <!-- 📑 TABS -->
+    <div class="tabs-container">
+        <div class="tabs">
+            <button class="tab-btn active" id="tab-graficas"><i data-lucide="line-chart"></i> Gráficas</button>
+            <button class="tab-btn" id="tab-simulacion"><i data-lucide="play-circle"></i> Simulación</button>
+        </div>
+    </div>
+
+    <!-- 🏗️ MAIN AREA -->
+    <main>
+        <!-- 📏 PANEL IZQUIERDO: Controles -->
+        <aside class="side-panel panel-izq" id="left-panel">
+
+            <div class="panel-section">
+                <div class="section-title"><i data-lucide="sliders"></i> Parámetros</div>
+
+                <div class="control-group">
+                    <div class="control-header">
+                        <span>Amplitud (A)</span>
+                        <span class="badge" id="val-A">5.0 m</span>
+                    </div>
+                    <input type="range" id="slider-A" min="0.1" max="10" step="0.1" value="5">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-header">
+                        <span>Frecuencia Ang. (ω)</span>
+                        <span class="badge" id="val-w">2.0 rad/s</span>
+                    </div>
+                    <input type="range" id="slider-w" min="0.1" max="10" step="0.1" value="2">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-header">
+                        <span>Fase Inicial (α)</span>
+                        <span class="badge" id="val-alpha">0.00 rad</span>
+                    </div>
+                    <input type="range" id="slider-alpha" min="0" max="6.28" step="0.01" value="0">
+                </div>
+            </div>
+
+            <div class="panel-section" id="visibilidad-section">
+                <div class="section-title"><i data-lucide="eye"></i> Visibilidad</div>
+
+                <div class="toggle-row">
+                    <div class="toggle-label">
+                        <div class="color-dot" style="background: var(--color-x)"></div> Elongación x(t)
+                    </div>
+                    <label class="switch" style="--toggle-color: var(--color-x)">
+                        <input type="checkbox" id="tog-x" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+                <div class="toggle-row">
+                    <div class="toggle-label">
+                        <div class="color-dot" style="background: var(--color-v)"></div> Velocidad v(t)
+                    </div>
+                    <label class="switch" style="--toggle-color: var(--color-v)">
+                        <input type="checkbox" id="tog-v" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+                <div class="toggle-row">
+                    <div class="toggle-label">
+                        <div class="color-dot" style="background: var(--color-a)"></div> Aceleración a(t)
+                    </div>
+                    <label class="switch" style="--toggle-color: var(--color-a)">
+                        <input type="checkbox" id="tog-a" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="panel-section" id="anim-section" style="display: none;">
+                <div class="section-title"><i data-lucide="play"></i> Control</div>
+                <div class="anim-controls">
+                    <button class="btn-icon" id="btn-reset" title="Reiniciar"><i data-lucide="rotate-ccw"></i></button>
+                    <button class="btn-icon" id="btn-play" style="width: 50px; height: 50px;" title="Play/Pausa"><i
+                            data-lucide="play" id="icon-play"></i></button>
+                </div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <span class="lcd-display" id="time-display">0.00 s</span>
+                </div>
+                <!-- Extras Simulación -->
+                <div class="toggle-row" style="margin-top: 20px;">
+                    <div class="toggle-label"><i data-lucide="arrow-right"></i> Vectores</div>
+                    <label class="switch">
+                        <input type="checkbox" id="tog-vectors" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+                <div class="toggle-row">
+                    <div class="toggle-label"><i data-lucide="sparkles"></i> Estela (Trail)</div>
+                    <label class="switch">
+                        <input type="checkbox" id="tog-trail" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+            </div>
+
+        </aside>
+
+        <div class="resizer" id="resizer"></div>
+
+        <!-- 🖼️ PANEL CENTRAL -->
+        <section class="panel-central">
+
+            <!-- Vista 1: Gráficas -->
+            <div id="view-graficas" class="view-container">
+                <canvas id="canvas-graficas"></canvas>
+
+                <div class="canvas-tools">
+                    <button class="tool-btn" id="tool-pan" title="Mover (Pan)"><i data-lucide="hand"></i></button>
+                    <button class="tool-btn" id="tool-zoomin" title="Zoom In"><i data-lucide="zoom-in"></i></button>
+                    <button class="tool-btn" id="tool-zoomout" title="Zoom Out"><i data-lucide="zoom-out"></i></button>
+                    <button class="tool-btn" id="tool-home" title="Restaurar Vista"><i data-lucide="home"></i></button>
+                </div>
+
+                <div class="live-equations" id="live-eq-container">
+                    <!-- Rellenado por JS -->
+                </div>
+            </div>
+
+            <!-- Vista 2: Simulación -->
+            <div id="view-simulacion" class="view-container hidden">
+                <canvas id="canvas-simulacion"></canvas>
+            </div>
+
+        </section>
+
+        <!-- 🎨 PANEL DERECHO: Personalización -->
+        <aside class="side-panel panel-der">
+            <div class="panel-section">
+                <div class="section-title"><i data-lucide="palette"></i> Apariencia</div>
+
+                <div class="style-row">
+                    <span>Tema Oscuro</span>
+                    <label class="switch">
+                        <input type="checkbox" id="tog-theme" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <hr style="border:0; border-top:1px solid var(--border-glass); margin: 15px 0;">
+
+                <div class="style-row">
+                    <span style="color: var(--color-x)">Color x(t)</span>
+                    <input type="color" id="color-x" value="#ff6b81">
+                </div>
+                <div class="style-row">
+                    <span style="color: var(--color-v)">Color v(t)</span>
+                    <input type="color" id="color-v" value="#7bed9f">
+                </div>
+                <div class="style-row">
+                    <span style="color: var(--color-a)">Color a(t)</span>
+                    <input type="color" id="color-a" value="#70a1ff">
+                </div>
+
+                <hr style="border:0; border-top:1px solid var(--border-glass); margin: 15px 0;">
+
+                <div class="style-row" style="flex-direction: column; align-items: flex-start;">
+                    <span style="margin-bottom: 5px;">Estilo de Línea</span>
+                    <select id="line-style" style="width: 100%;">
+                        <option value="solid">Sólida (───)</option>
+                        <option value="dashed">Rayas (- - -)</option>
+                        <option value="dotted">Punteada (· · ·)</option>
+                    </select>
+                </div>
+
+                <div class="style-row" style="flex-direction: column; align-items: flex-start; margin-top:10px;">
+                    <span style="margin-bottom: 5px;">Grosor (<span id="val-thick">2</span>px)</span>
+                    <input type="range" id="slider-thick" min="1" max="6" value="2">
+                </div>
+
+                <button class="btn-full" id="btn-export"><i data-lucide="download"></i> Exportar PNG</button>
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- 🦶 FOOTER -->
+    <footer>
+        © 2026 — Miguel Angel Delgado Acevedo | Física Interactiva
+    </footer>
+
+    <!-- 📖 MODAL TEORÍA -->
+    <div class="modal-overlay" id="teoria-modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('teoria-modal')"><i data-lucide="x"
+                    style="width:24px; height:24px;"></i></button>
+            <div class="modal-body">
+                <h2>Teoría del M.A.S.</h2>
+                <p>El Movimiento Armónico Simple (MAS) es un movimiento periódico de vaivén en el que un cuerpo oscila a
+                    un lado y a otro de su posición de equilibrio, bajo la acción de una fuerza restauradora
+                    proporcional al desplazamiento.</p>
+
+                <h3>Ecuación de Posición (Elongación)</h3>
+                <p>Describe la posición de la partícula en cualquier instante $t$:</p>
+                $$x(t) = A \cdot \sin(\omega t + \alpha)$$
+
+                <h3>Ecuación de Velocidad</h3>
+                <p>Es la derivada de la posición con respecto al tiempo:</p>
+                $$v(t) = \frac{dx}{dt} = A\omega \cdot \cos(\omega t + \alpha)$$
+
+                <h3>Ecuación de Aceleración</h3>
+                <p>Es la derivada de la velocidad (o segunda derivada de la posición):</p>
+                $$a(t) = \frac{dv}{dt} = -A\omega^2 \cdot \sin(\omega t + \alpha) = -\omega^2 x(t)$$
+
+                <hr style="margin: 15px 0; border:0; border-top:1px solid var(--grid-main);">
+                <p><strong>Parámetros:</strong></p>
+                <ul>
+                    <li>$A$: <strong>Amplitud</strong>. Máximo desplazamiento desde el equilibrio [m].</li>
+                    <li>$\omega$: <strong>Frecuencia Angular</strong>. Rapidez de oscilación [rad/s]. Relacionada con el
+                        período $T$ mediante $\omega = 2\pi/T$.</li>
+                    <li>$\alpha$: <strong>Fase Inicial</strong>. Determina la posición en $t=0$ [rad].</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- ❓ MODAL AYUDA -->
+    <div class="modal-overlay" id="ayuda-modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('ayuda-modal')"><i data-lucide="x"
+                    style="width:24px; height:24px;"></i></button>
+            <div class="modal-body">
+                <h2>Manual de Usuario</h2>
+                <p><strong>🎯 Navegación:</strong> Usa las pestañas superiores para alternar entre el análisis gráfico y
+                    la simulación física.</p>
+                <p><strong>🎛️ Controles:</strong> El panel izquierdo permite ajustar Amplitud, Frecuencia y Fase. En la
+                    vista de gráficas, usa los interruptores para ocultar/mostrar curvas.</p>
+                <p><strong>🔍 Interactividad del Canvas (Gráficas):</strong></p>
+                <ul>
+                    <li>Pasa el ratón por la gráfica para ver los valores exactos en ese instante (Tooltip).</li>
+                    <li>Usa la rueda del ratón para hacer Zoom.</li>
+                    <li>Haz clic en el icono de "Mano" (Pan) o mantén pulsado para arrastrar la gráfica.</li>
+                </ul>
+                <p><strong>🎬 Animación:</strong> Al pasar a Simulación, presiona Play para iniciar. <i>Nota: ¡Enciende
+                        tu sonido! 🔊 La frecuencia del tono acompaña al movimiento.</i></p>
+                <p><strong>🎨 Personalización:</strong> El panel derecho te permite cambiar colores, grosor de líneas,
+                    exportar la vista como imagen y alternar el tema visual.</p>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- ⚙️ LOGICA JAVASCRIPT -->
+    <script>
+        // ┌─────────────────────────────────────────┐
+        // │ 🔧 CONFIGURACIÓN INICIAL Y ESTADO       │
+        // └─────────────────────────────────────────┘
+
+        // Inicializar Iconos Lucide
+        lucide.createIcons();
+
+        // Estado global de la aplicación
+        const state = {
+            // Física
+            A: 5.0,
+            w: 2.0,
+            alpha: 0.0,
+            t: 0,
+
+            // Animación
+            playing: false,
+            lastFrameTime: 0,
+
+            // Vista Gráficas (Viewport)
+            scaleX: 50, // pixeles por segundo
+            scaleY: 20, // pixeles por metro
+            offsetX: 50, // margen izquierdo inicial
+            offsetY: 0,  // centrado verticalmente
+            isDragging: false,
+            dragStartX: 0, dragStartY: 0,
+            activeTool: 'pointer', // 'pointer', 'pan'
+            mouseX: 0, mouseY: 0,
+            showTooltip: false,
+
+            // Visibilidad
+            showX: true, showV: true, showA: true,
+            showVectors: true, showTrail: true,
+
+            // Estilos
+            theme: 'dark',
+            colors: { x: '#ff6b81', v: '#7bed9f', a: '#70a1ff' },
+            lineWidth: 2,
+            lineDash: [] // [] solido, [5,5] rayas, [2,2] puntos
+        };
+
+        // Referencias DOM
+        const canvasGraph = document.getElementById('canvas-graficas');
+        const ctxGraph = canvasGraph.getContext('2d');
+        const canvasSim = document.getElementById('canvas-simulacion');
+        const ctxSim = canvasSim.getContext('2d');
+
+        const views = {
+            graficas: document.getElementById('view-graficas'),
+            simulacion: document.getElementById('view-simulacion')
+        };
+        const tabs = {
+            graficas: document.getElementById('tab-graficas'),
+            simulacion: document.getElementById('tab-simulacion')
+        };
+        const sections = {
+            visibilidad: document.getElementById('visibilidad-section'),
+            anim: document.getElementById('anim-section')
+        };
+
+        let currentTab = 'graficas';
+
+        // ┌─────────────────────────────────────────┐
+        // │ 🎵 MOTOR DE AUDIO (Elemento Sorpresa)   │
+        // └─────────────────────────────────────────┘
+        let audioCtx, oscillator, gainNode;
+        let audioInitialized = false;
+
+        function initAudio() {
+            if (audioInitialized) return;
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+                oscillator = audioCtx.createOscillator();
+                gainNode = audioCtx.createGain();
+
+                oscillator.type = 'sine';
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.start();
+                gainNode.gain.value = 0; // mutear inicialmente
+                audioInitialized = true;
+            } catch (e) {
+                console.log("Web Audio API no soportada");
+            }
+        }
+
+        function updateAudio() {
+            if (!audioInitialized || !audioCtx) return;
+            if (state.playing) {
+                // Mapear w (0.1 - 10) a frecuencias audibles agradables (ej. 200Hz - 600Hz)
+                const freq = 200 + (state.w * 40);
+                oscillator.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
+                // Volumen sube/baja con la elongación absoluta para efecto Doppler visual
+                const currentX = state.A * Math.sin(state.w * state.t + state.alpha);
+                const vol = 0.05 + 0.1 * Math.abs(currentX / state.A);
+                gainNode.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.1);
+            } else {
+                gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+            }
+        }
+
+        // ┌─────────────────────────────────────────┐
+        // │ 🧮 ECUACIONES EN VIVO (KaTeX)           │
+        // └─────────────────────────────────────────┘
+        function updateLiveEquations() {
+            const container = document.getElementById('live-eq-container');
+            if (currentTab !== 'graficas') return;
+
+            const A_str = state.A.toFixed(1);
+            const w_str = state.w.toFixed(1);
+            const alpha_str = state.alpha.toFixed(2);
+
+            let tex = `\\begin{aligned}`;
+            if (state.showX) tex += `x(t) &= ${A_str} \\sin(${w_str}t + ${alpha_str}) \\\\`;
+            if (state.showV) tex += `v(t) &= ${(state.A * state.w).toFixed(1)} \\cos(${w_str}t + ${alpha_str}) \\\\`;
+            if (state.showA) tex += `a(t) &= -${(state.A * state.w * state.w).toFixed(1)} \\sin(${w_str}t + ${alpha_str})`;
+            tex += `\\end{aligned}`;
+
+            // Renderizar. Si todo está oculto, vaciar.
+            if (!state.showX && !state.showV && !state.showA) {
+                container.innerHTML = '';
+            } else {
+                try {
+                    katex.render(tex, container, { displayMode: false, throwOnError: false });
+                } catch (e) { }
+            }
+        }
+
+        // ┌─────────────────────────────────────────┐
+        // │ ⚙️ CONTROLADORES UI (Event Listeners)   │
+        // └─────────────────────────────────────────┘
+
+        // Sliders de Parámetros
+        document.getElementById('slider-A').addEventListener('input', (e) => {
+            state.A = parseFloat(e.target.value);
+            document.getElementById('val-A').innerText = state.A.toFixed(1) + ' m';
+            updateLiveEquations(); if (currentTab === 'graficas') drawGraph();
+        });
+        document.getElementById('slider-w').addEventListener('input', (e) => {
+            state.w = parseFloat(e.target.value);
+            document.getElementById('val-w').innerText = state.w.toFixed(1) + ' rad/s';
+            updateLiveEquations(); if (currentTab === 'graficas') drawGraph();
+        });
+        document.getElementById('slider-alpha').addEventListener('input', (e) => {
+            state.alpha = parseFloat(e.target.value);
+            document.getElementById('val-alpha').innerText = state.alpha.toFixed(2) + ' rad';
+            updateLiveEquations(); if (currentTab === 'graficas') drawGraph();
+        });
+
+        // Toggles Visibilidad
+        ['x', 'v', 'a'].forEach(v => {
+            document.getElementById(`tog-${v}`).addEventListener('change', (e) => {
+                state[`show${v.toUpperCase()}`] = e.target.checked;
+                updateLiveEquations(); if (currentTab === 'graficas') drawGraph();
+            });
+            document.getElementById(`color-${v}`).addEventListener('input', (e) => {
+                state.colors[v] = e.target.value;
+                document.documentElement.style.setProperty(`--color-${v}`, e.target.value);
+                if (currentTab === 'graficas') drawGraph();
+            });
+        });
+
+        // Toggles Simulación
+        document.getElementById('tog-vectors').addEventListener('change', e => state.showVectors = e.target.checked);
+        document.getElementById('tog-trail').addEventListener('change', e => state.showTrail = e.target.checked);
+
+        // Estilos de línea
+        document.getElementById('line-style').addEventListener('change', (e) => {
+            switch (e.target.value) {
+                case 'solid': state.lineDash = []; break;
+                case 'dashed': state.lineDash = [10, 10]; break;
+                case 'dotted': state.lineDash = [2, 6]; break;
+            }
+            if (currentTab === 'graficas') drawGraph();
+        });
+        document.getElementById('slider-thick').addEventListener('input', (e) => {
+            state.lineWidth = parseInt(e.target.value);
+            document.getElementById('val-thick').innerText = state.lineWidth;
+            if (currentTab === 'graficas') drawGraph();
+        });
+
+        // Tema
+        document.getElementById('tog-theme').addEventListener('change', (e) => {
+            state.theme = e.target.checked ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', state.theme);
+            if (currentTab === 'graficas') drawGraph();
+        });
+
+        // Resizer del panel izquierdo
+        const resizer = document.getElementById('resizer');
+        const leftPanel = document.getElementById('left-panel');
+        let isResizing = false;
+        resizer.addEventListener('mousedown', () => { isResizing = true; document.body.style.cursor = 'col-resize'; });
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const newWidth = e.clientX - leftPanel.getBoundingClientRect().left;
+            if (newWidth > 200 && newWidth < 500) { leftPanel.style.width = `${newWidth}px`; resizeCanvas(); }
+        });
+        document.addEventListener('mouseup', () => { isResizing = false; document.body.style.cursor = ''; });
+
+        // Navegación de Pestañas
+        tabs.graficas.addEventListener('click', () => switchTab('graficas'));
+        tabs.simulacion.addEventListener('click', () => switchTab('simulacion'));
+
+        function switchTab(tab) {
+            currentTab = tab;
+            // Actualizar botones
+            tabs.graficas.classList.remove('active');
+            tabs.simulacion.classList.remove('active');
+            tabs[tab].classList.add('active');
+
+            // Mostrar/Ocultar Vistas
+            views.graficas.classList.add('hidden');
+            views.simulacion.classList.add('hidden');
+            views[tab].classList.remove('hidden');
+
+            // Paneles Izquierdos específicos
+            sections.visibilidad.style.display = tab === 'graficas' ? 'block' : 'none';
+            sections.anim.style.display = tab === 'simulacion' ? 'block' : 'none';
+
+            resizeCanvas();
+            if (tab === 'graficas') {
+                updateLiveEquations();
+                drawGraph();
+                state.playing = false; // Detener animación al salir
+                updatePlayIcon();
+                updateAudio();
+            } else {
+                trailHistory = []; // Resetear estela
+            }
+        }
+
+        // ┌─────────────────────────────────────────┐
+        // │ 🎬 MOTOR DE ANIMACIÓN                   │
+        // └─────────────────────────────────────────┘
+        const btnPlay = document.getElementById('btn-play');
+        const iconPlay = document.getElementById('icon-play');
+        const btnReset = document.getElementById('btn-reset');
+        const timeDisplay = document.getElementById('time-display');
+        let trailHistory = [];
+
+        function updatePlayIcon() {
+            iconPlay.setAttribute('data-lucide', state.playing ? 'pause' : 'play');
+            lucide.createIcons();
+        }
+
+        btnPlay.addEventListener('click', () => {
+            initAudio(); // Inicializar audio en primera interacción
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+
+            state.playing = !state.playing;
+            updatePlayIcon();
+            if (state.playing) {
+                state.lastFrameTime = performance.now();
+                requestAnimationFrame(loop);
+            }
+            updateAudio();
+        });
+
+        btnReset.addEventListener('click', () => {
+            state.playing = false;
+            state.t = 0;
+            trailHistory = [];
+            timeDisplay.innerText = "0.00 s";
+            updatePlayIcon();
+            updateAudio();
+            if (currentTab === 'simulacion') drawSimulation();
+        });
+
+        function loop(timestamp) {
+            if (!state.playing) return;
+
+            const dt = (timestamp - state.lastFrameTime) / 1000; // a segundos
+            state.lastFrameTime = timestamp;
+
+            state.t += dt;
+            timeDisplay.innerText = state.t.toFixed(2) + " s";
+
+            if (currentTab === 'simulacion') {
+                drawSimulation();
+            }
+            updateAudio();
+            requestAnimationFrame(loop);
+        }
+
+        // ┌─────────────────────────────────────────┐
+        // │ 🎨 MOTOR DE RENDERIZADO (Canvas 2D)     │
+        // └─────────────────────────────────────────┘
+
+        function resizeCanvas() {
+            // Manejar Device Pixel Ratio para pantallas Retina
+            const dpr = window.devicePixelRatio || 1;
+
+            [canvasGraph, canvasSim].forEach(cvs => {
+                const rect = cvs.parentElement.getBoundingClientRect();
+                cvs.width = rect.width * dpr;
+                cvs.height = rect.height * dpr;
+                cvs.style.width = `${rect.width}px`;
+                cvs.style.height = `${rect.height}px`;
+                const ctx = cvs.getContext('2d');
+                ctx.scale(dpr, dpr);
+            });
+
+            if (currentTab === 'graficas') {
+                state.offsetY = canvasGraph.parentElement.clientHeight / 2;
+                drawGraph();
+            } else {
+                drawSimulation();
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            clearTimeout(window.resizeTimer);
+            window.resizeTimer = setTimeout(resizeCanvas, 100);
+        });
+
+        // ================= GRÁFICAS =================
+
+        // Controles de Canvas
+        const btnPan = document.getElementById('tool-pan');
+        btnPan.addEventListener('click', () => {
+            state.activeTool = state.activeTool === 'pan' ? 'pointer' : 'pan';
+            btnPan.classList.toggle('active', state.activeTool === 'pan');
+            canvasGraph.style.cursor = state.activeTool === 'pan' ? 'grab' : 'crosshair';
+        });
+
+        document.getElementById('tool-home').addEventListener('click', () => {
+            state.scaleX = 50; state.scaleY = 20; state.offsetX = 50; state.offsetY = canvasGraph.parentElement.clientHeight / 2;
+            drawGraph();
+        });
+        document.getElementById('tool-zoomin').addEventListener('click', () => zoom(1.2));
+        document.getElementById('tool-zoomout').addEventListener('click', () => zoom(0.8));
+
+        function zoom(factor, cx = null, cy = null) {
+            const w = canvasGraph.parentElement.clientWidth;
+            const h = canvasGraph.parentElement.clientHeight;
+            cx = cx || w / 2; cy = cy || h / 2;
+
+            // Mantener punto bajo el cursor
+            const t = (cx - state.offsetX) / state.scaleX;
+            const y = (state.offsetY - cy) / state.scaleY;
+
+            state.scaleX *= factor;
+            state.scaleY *= factor;
+
+            // Restringir limites
+            state.scaleX = Math.max(5, Math.min(state.scaleX, 500));
+            state.scaleY = Math.max(2, Math.min(state.scaleY, 200));
+
+            state.offsetX = cx - (t * state.scaleX);
+            state.offsetY = cy + (y * state.scaleY);
+
+            drawGraph();
+        }
+
+        // Eventos Mouse Graph
+        canvasGraph.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            zoom(e.deltaY < 0 ? 1.1 : 0.9, e.offsetX, e.offsetY);
+        });
+
+        canvasGraph.addEventListener('mousedown', e => {
+            if (state.activeTool === 'pan') {
+                state.isDragging = true;
+                state.dragStartX = e.clientX - state.offsetX;
+                state.dragStartY = e.clientY - state.offsetY;
+                canvasGraph.classList.add('grabbing');
+            }
+        });
+
+        canvasGraph.addEventListener('mousemove', e => {
+            const rect = canvasGraph.getBoundingClientRect();
+            state.mouseX = e.clientX - rect.left;
+            state.mouseY = e.clientY - rect.top;
+
+            if (state.isDragging && state.activeTool === 'pan') {
+                state.offsetX = e.clientX - state.dragStartX;
+                state.offsetY = e.clientY - state.dragStartY;
+                drawGraph();
+            } else if (state.activeTool === 'pointer') {
+                state.showTooltip = true;
+                drawGraph(); // Redibujar para mostrar cursor/tooltip
+            }
+        });
+
+        canvasGraph.addEventListener('mouseup', () => { state.isDragging = false; canvasGraph.classList.remove('grabbing'); });
+        canvasGraph.addEventListener('mouseleave', () => { state.isDragging = false; state.showTooltip = false; canvasGraph.classList.remove('grabbing'); drawGraph(); });
+
+        function drawGraph() {
+            const w = canvasGraph.parentElement.clientWidth;
+            const h = canvasGraph.parentElement.clientHeight;
+            ctxGraph.clearRect(0, 0, w, h);
+
+            const gridColorMain = getComputedStyle(document.documentElement).getPropertyValue('--grid-main').trim();
+            const gridColorSec = getComputedStyle(document.documentElement).getPropertyValue('--grid-sec').trim();
+            const axisColor = getComputedStyle(document.documentElement).getPropertyValue('--axis-color').trim();
+
+            // 1. Dibujar Cuadrícula Estilo GeoGebra
+            // Calcular rangos visibles físicos
+            const minT = -state.offsetX / state.scaleX;
+            const maxT = (w - state.offsetX) / state.scaleX;
+            const minY = (state.offsetY - h) / state.scaleY;
+            const maxY = state.offsetY / state.scaleY;
+
+            // Funciones utilitarias para coordenadas
+            const tx = (t) => state.offsetX + t * state.scaleX;
+            const ty = (y) => state.offsetY - y * state.scaleY;
+
+            // Determinar paso de cuadrícula según zoom
+            let stepX = 1, stepY = 1;
+            if (state.scaleX > 100) stepX = 0.5; if (state.scaleX < 20) stepX = 5;
+            if (state.scaleY > 50) stepY = 0.5; if (state.scaleY < 10) stepY = 5;
+
+            ctxGraph.lineWidth = 1;
+            ctxGraph.setLineDash([]);
+
+            // Líneas Verticales (Tiempo)
+            const firstTX = Math.floor(minT / stepX) * stepX;
+            for (let t = firstTX; t <= maxT; t += stepX) {
+                const x = tx(t);
+                ctxGraph.strokeStyle = (Math.abs(t) < 0.01) ? axisColor : (t % (stepX * 2) === 0 ? gridColorMain : gridColorSec);
+                ctxGraph.beginPath(); ctxGraph.moveTo(x, 0); ctxGraph.lineTo(x, h); ctxGraph.stroke();
+            }
+            // Líneas Horizontales (Y)
+            const firstTY = Math.floor(minY / stepY) * stepY;
+            for (let y = firstTY; y <= maxY; y += stepY) {
+                const cy = ty(y);
+                ctxGraph.strokeStyle = (Math.abs(y) < 0.01) ? axisColor : (y % (stepY * 2) === 0 ? gridColorMain : gridColorSec);
+                ctxGraph.beginPath(); ctxGraph.moveTo(0, cy); ctxGraph.lineTo(w, cy); ctxGraph.stroke();
+            }
+
+            // 2. Ejes Principales y Ticks
+            ctxGraph.lineWidth = 2;
+            ctxGraph.strokeStyle = axisColor;
+            ctxGraph.fillStyle = axisColor;
+            ctxGraph.font = "12px Inter";
+            ctxGraph.textAlign = "center";
+            ctxGraph.textBaseline = "top";
+
+            // Eje X
+            const xAxisY = Math.min(Math.max(ty(0), 10), h - 10); // Mantener eje visible
+            ctxGraph.beginPath(); ctxGraph.moveTo(0, xAxisY); ctxGraph.lineTo(w, xAxisY); ctxGraph.stroke();
+            // Flecha X
+            ctxGraph.beginPath(); ctxGraph.moveTo(w, xAxisY); ctxGraph.lineTo(w - 10, xAxisY - 5); ctxGraph.lineTo(w - 10, xAxisY + 5); ctxGraph.fill();
+            ctxGraph.fillText("t [s]", w - 20, xAxisY + 10);
+
+            // Eje Y
+            const yAxisX = Math.min(Math.max(tx(0), 10), w - 10);
+            ctxGraph.beginPath(); ctxGraph.moveTo(yAxisX, 0); ctxGraph.lineTo(yAxisX, h); ctxGraph.stroke();
+            // Flecha Y
+            ctxGraph.beginPath(); ctxGraph.moveTo(yAxisX, 0); ctxGraph.lineTo(yAxisX - 5, 10); ctxGraph.lineTo(yAxisX + 5, 10); ctxGraph.fill();
+            ctxGraph.textAlign = "left";
+            ctxGraph.fillText("Magnitud", yAxisX + 10, 10);
+
+            // Números en Ejes
+            ctxGraph.textAlign = "center";
+            for (let t = firstTX; t <= maxT; t += stepX) {
+                if (Math.abs(t) > 0.01) ctxGraph.fillText(t.toFixed(1), tx(t), xAxisY + 5);
+            }
+            ctxGraph.textAlign = "right"; ctxGraph.textBaseline = "middle";
+            for (let y = firstTY; y <= maxY; y += stepY) {
+                if (Math.abs(y) > 0.01) ctxGraph.fillText(y.toFixed(1), yAxisX - 5, ty(y));
+            }
+            // Origen
+            ctxGraph.fillText("0", yAxisX - 5, xAxisY + 10);
+
+            // 3. Dibujar Curvas
+            ctxGraph.lineWidth = state.lineWidth;
+            ctxGraph.setLineDash(state.lineDash);
+
+            const drawCurve = (func, color) => {
+                ctxGraph.strokeStyle = color;
+                ctxGraph.beginPath();
+                let started = false;
+                // Renderizar con resolución de píxeles
+                for (let px = 0; px <= w; px += 2) {
+                    const t = (px - state.offsetX) / state.scaleX;
+                    if (t < 0 && !started) continue; // Empezar en t=0 si se prefiere, o dejar continuo. Lo dejaremos continuo para ver fase.
+                    const y = func(t);
+                    const py = ty(y);
+                    if (!started) { ctxGraph.moveTo(px, py); started = true; }
+                    else { ctxGraph.lineTo(px, py); }
+                }
+                ctxGraph.stroke();
+            };
+
+            const eqX = (t) => state.A * Math.sin(state.w * t + state.alpha);
+            const eqV = (t) => state.A * state.w * Math.cos(state.w * t + state.alpha);
+            const eqA = (t) => -state.A * state.w * state.w * Math.sin(state.w * t + state.alpha);
+
+            if (state.showA) drawCurve(eqA, state.colors.a);
+            if (state.showV) drawCurve(eqV, state.colors.v);
+            if (state.showX) drawCurve(eqX, state.colors.x);
+            ctxGraph.setLineDash([]); // Reset dash
+
+            // 4. Tooltip & Cursor Interactivos
+            if (state.showTooltip && state.activeTool === 'pointer' && state.mouseX > 0) {
+                const tHover = (state.mouseX - state.offsetX) / state.scaleX;
+
+                // Cursor vertical
+                ctxGraph.strokeStyle = axisColor;
+                ctxGraph.lineWidth = 1;
+                ctxGraph.setLineDash([5, 5]);
+                ctxGraph.beginPath(); ctxGraph.moveTo(state.mouseX, 0); ctxGraph.lineTo(state.mouseX, h); ctxGraph.stroke();
+                ctxGraph.setLineDash([]);
+
+                // Puntos en curvas
+                const vals = [];
+                if (state.showX) vals.push({ n: 'x', v: eqX(tHover), c: state.colors.x });
+                if (state.showV) vals.push({ n: 'v', v: eqV(tHover), c: state.colors.v });
+                if (state.showA) vals.push({ n: 'a', v: eqA(tHover), c: state.colors.a });
+
+                vals.forEach(val => {
+                    ctxGraph.fillStyle = val.c;
+                    ctxGraph.beginPath(); ctxGraph.arc(state.mouseX, ty(val.v), 4, 0, Math.PI * 2); ctxGraph.fill();
+                    ctxGraph.stroke();
+                });
+
+                // Caja Tooltip Glassmorphism
+                if (vals.length > 0) {
+                    const tooltipW = 120;
+                    const tooltipH = 20 + vals.length * 20;
+                    let tooltipX = state.mouseX + 15;
+                    let tooltipY = state.mouseY + 15;
+                    if (tooltipX + tooltipW > w) tooltipX = state.mouseX - tooltipW - 15;
+
+                    ctxGraph.fillStyle = state.theme === 'dark' ? 'rgba(30,41,59,0.8)' : 'rgba(255,255,255,0.8)';
+                    ctxGraph.roundRect(tooltipX, tooltipY, tooltipW, tooltipH, 8);
+                    ctxGraph.fill();
+                    ctxGraph.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border-glass');
+                    ctxGraph.stroke();
+
+                    ctxGraph.font = "bold 12px Inter";
+                    ctxGraph.fillStyle = axisColor;
+                    ctxGraph.textAlign = "left";
+                    ctxGraph.fillText(`t = ${tHover.toFixed(2)} s`, tooltipX + 10, tooltipY + 8);
+
+                    vals.forEach((val, i) => {
+                        ctxGraph.fillStyle = val.c;
+                        ctxGraph.fillText(`${val.n}: ${val.v.toFixed(2)}`, tooltipX + 10, tooltipY + 28 + i * 20);
+                    });
+                }
+            }
+        }
+
+        // ================= SIMULACIÓN =================
+        function drawSimulation() {
+            const w = canvasSim.parentElement.clientWidth;
+            const h = canvasSim.parentElement.clientHeight;
+            ctxSim.clearRect(0, 0, w, h);
+
+            const axisColor = getComputedStyle(document.documentElement).getPropertyValue('--axis-color').trim();
+            const centerY = h / 2;
+            const centerX = w / 2;
+
+            // Escala para ajustar amplitud 10 al canvas
+            const simScale = (w / 2 - 50) / 10;
+            const pxA = state.A * simScale;
+
+            // 1. Eje y Marcadores
+            ctxSim.strokeStyle = axisColor;
+            ctxSim.lineWidth = 2;
+            ctxSim.beginPath(); ctxSim.moveTo(50, centerY); ctxSim.lineTo(w - 50, centerY); ctxSim.stroke();
+
+            ctxSim.setLineDash([5, 5]);
+            ctxSim.strokeStyle = state.theme === 'dark' ? '#555' : '#ccc';
+            // Origen
+            ctxSim.beginPath(); ctxSim.moveTo(centerX, centerY - 30); ctxSim.lineTo(centerX, centerY + 30); ctxSim.stroke();
+            // Limites +A, -A
+            ctxSim.beginPath(); ctxSim.moveTo(centerX - pxA, centerY - 20); ctxSim.lineTo(centerX - pxA, centerY + 20); ctxSim.stroke();
+            ctxSim.beginPath(); ctxSim.moveTo(centerX + pxA, centerY - 20); ctxSim.lineTo(centerX + pxA, centerY + 20); ctxSim.stroke();
+            ctxSim.setLineDash([]);
+
+            ctxSim.fillStyle = axisColor;
+            ctxSim.font = "12px Inter"; ctxSim.textAlign = "center";
+            ctxSim.fillText("0", centerX, centerY + 40);
+            ctxSim.fillText("M", centerX - pxA, centerY + 40);
+            ctxSim.fillText("N", centerX + pxA, centerY + 40);
+
+            // Física Actual
+            const x = state.A * Math.sin(state.w * state.t + state.alpha);
+            const v = state.A * state.w * Math.cos(state.w * state.t + state.alpha);
+            const a = -state.A * state.w * state.w * Math.sin(state.w * state.t + state.alpha);
+
+            const pxX = centerX + (x * simScale);
+
+            // 2. Estela (Motion Trail)
+            if (state.showTrail && state.playing) {
+                trailHistory.push(pxX);
+                if (trailHistory.length > 30) trailHistory.shift();
+
+                for (let i = 0; i < trailHistory.length; i++) {
+                    const alpha = i / trailHistory.length;
+                    ctxSim.beginPath();
+                    ctxSim.arc(trailHistory[i], centerY, 15 * alpha, 0, Math.PI * 2);
+                    ctxSim.fillStyle = `${state.colors.x}${Math.floor(alpha * 100).toString(16).padStart(2, '0')}`; // Hex color with alpha
+                    ctxSim.fill();
+                }
+            } else if (!state.playing) {
+                trailHistory = [];
+            }
+
+            // 3. Partícula (Neón effect)
+            ctxSim.shadowBlur = 15;
+            ctxSim.shadowColor = state.colors.x;
+            ctxSim.beginPath();
+            ctxSim.arc(pxX, centerY, 15, 0, Math.PI * 2);
+            ctxSim.fillStyle = state.colors.x;
+            ctxSim.fill();
+            ctxSim.shadowBlur = 0; // Reset
+
+            // Brillo central
+            ctxSim.beginPath(); ctxSim.arc(pxX, centerY, 5, 0, Math.PI * 2);
+            ctxSim.fillStyle = 'white'; ctxSim.fill();
+
+            // 4. Vectores
+            if (state.showVectors) {
+                const drawArrow = (fromX, fromY, mag, color, label) => {
+                    const arrowLen = mag * (simScale / state.w); // Escalar visualmente
+                    if (Math.abs(arrowLen) < 2) return;
+
+                    ctxSim.strokeStyle = color;
+                    ctxSim.fillStyle = color;
+                    ctxSim.lineWidth = 3;
+                    const toX = fromX + arrowLen;
+                    const dir = arrowLen > 0 ? 1 : -1;
+
+                    ctxSim.beginPath(); ctxSim.moveTo(fromX, fromY); ctxSim.lineTo(toX, fromY); ctxSim.stroke();
+                    // Punta
+                    ctxSim.beginPath(); ctxSim.moveTo(toX, fromY); ctxSim.lineTo(toX - dir * 10, fromY - 5); ctxSim.lineTo(toX - dir * 10, fromY + 5); ctxSim.fill();
+
+                    ctxSim.fillText(label, toX, fromY - 10);
+                };
+
+                drawArrow(pxX, centerY - 25, v, state.colors.v, "v");
+                drawArrow(pxX, centerY + 25, a, state.colors.a, "a");
+            }
+        }
+
+        // Modals Logic
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        // Renderizar Matemáticas al cargar
+        document.addEventListener("DOMContentLoaded", () => {
+            renderMathInElement(document.body, {
+                delimiters: [{ left: "$$", right: "$$", display: true }, { left: "$", right: "$", display: false }],
+                throwOnError: false
+            });
+            setTimeout(() => { resizeCanvas(); updateLiveEquations(); }, 200);
+        });
+
+        // ┌─────────────────────────────────────────┐
+        // │ 🎉 ELEMENTOS SORPRESA EXTRAS            │
+        // └─────────────────────────────────────────┘
+
+        // Easter Egg: Fuegos Artificiales
+        let logoClicks = 0;
+        document.getElementById('logo-trigger').addEventListener('click', () => {
+            logoClicks++;
+            if (logoClicks === 3) {
+                logoClicks = 0;
+                fireConfetti(true); // Fuerte
+            }
+            setTimeout(() => logoClicks = 0, 1000);
+        });
+
+        // Exportar a PNG + Confetti
+        document.getElementById('btn-export').addEventListener('click', () => {
+            const canvasToExport = currentTab === 'graficas' ? canvasGraph : canvasSim;
+            // Dibujar fondo según tema para que no quede transparente feo
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvasToExport.width; tempCanvas.height = canvasToExport.height;
+            const tCtx = tempCanvas.getContext('2d');
+            tCtx.fillStyle = state.theme === 'dark' ? '#1e293b' : '#ffffff';
+            tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            tCtx.drawImage(canvasToExport, 0, 0);
+
+            const link = document.createElement('a');
+            link.download = `MAS_${currentTab}_${Date.now()}.png`;
+            link.href = tempCanvas.toDataURL('image/png');
+            link.click();
+
+            fireConfetti(false); // Suave
+        });
+
+        // Sistema simple de Confetti
+        const confCanvas = document.getElementById('confetti-canvas');
+        const confCtx = confCanvas.getContext('2d');
+        let confParticles = [];
+
+        function fireConfetti(intense = false) {
+            confCanvas.width = window.innerWidth;
+            confCanvas.height = window.innerHeight;
+            const colors = [state.colors.x, state.colors.v, state.colors.a, '#f1c40f', '#9b59b6'];
+            const count = intense ? 150 : 50;
+
+            for (let i = 0; i < count; i++) {
+                confParticles.push({
+                    x: Math.random() * confCanvas.width,
+                    y: intense ? confCanvas.height : -10,
+                    w: Math.random() * 10 + 5,
+                    h: Math.random() * 10 + 5,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: intense ? -(Math.random() * 15 + 5) : Math.random() * 5 + 2,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rot: Math.random() * 360,
+                    rotSpd: (Math.random() - 0.5) * 10
+                });
+            }
+            if (confParticles.length === count) requestAnimationFrame(animConfetti);
+        }
+
+        function animConfetti() {
+            if (confParticles.length === 0) return;
+            confCtx.clearRect(0, 0, confCanvas.width, confCanvas.height);
+            let alive = [];
+
+            confParticles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.2; // Gravedad
+                p.rot += p.rotSpd;
+
+                confCtx.save();
+                confCtx.translate(p.x, p.y);
+                confCtx.rotate(p.rot * Math.PI / 180);
+                confCtx.fillStyle = p.color;
+                confCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                confCtx.restore();
+
+                if (p.y < confCanvas.height + 20) alive.push(p);
+            });
+            confParticles = alive;
+            if (confParticles.length > 0) requestAnimationFrame(animConfetti);
+        }
+
+        // Polyfill para roundRect si el navegador es antiguo
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+                if (w < 2 * r) r = w / 2;
+                if (h < 2 * r) r = h / 2;
+                this.beginPath();
+                this.moveTo(x + r, y);
+                this.arcTo(x + w, y, x + w, y + h, r);
+                this.arcTo(x + w, y + h, x, y + h, r);
+                this.arcTo(x, y + h, x, y, r);
+                this.arcTo(x, y, x + w, y, r);
+                this.closePath();
+                return this;
+            }
+        }
+
+    </script>
+</body>
+
+</html>
