@@ -14,7 +14,9 @@ const CHATBOT_CONFIG = {
     temperature: 0.7,
     storageKeyApi: 'fisica3-gemini-api-key',
     storageKeyModel: 'fisica3-gemini-model',
-    storageKeyHistory: 'fisica3-chat-history'
+    storageKeyHistory: 'fisica3-chat-history',
+    tipIntervalMin: 30000,  // Intervalo mínimo entre tips (30s)
+    tipIntervalMax: 60000   // Intervalo máximo entre tips (60s)
 };
 
 const DIAGNOSTIC_MODELS = [
@@ -101,6 +103,108 @@ Además existen las secciones:
 }
 
 // ════════════════════════════════════════════
+// 2.5 TIPS Y DATOS CURIOSOS
+// ════════════════════════════════════════════
+const PHYSICS_TIPS = [
+    { icon: '🌊', text: 'El sonido es una onda mecánica que viaja a ~343 m/s en el aire a 20 °C.' },
+    { icon: '⏱️', text: 'Galileo usó su propio pulso como cronómetro para medir oscilaciones de lámparas en la catedral de Pisa.' },
+    { icon: '🎸', text: 'La cuerda de una guitarra vibra con MAS; la frecuencia depende de la tensión y la longitud.' },
+    { icon: '🌍', text: 'La Tierra oscila como un MAS después de un terremoto, con periodos de hasta 54 minutos.' },
+    { icon: '⚛️', text: 'Los átomos en un cristal vibran con MAS alrededor de posiciones de equilibrio.' },
+    { icon: '🕰️', text: 'Un péndulo de 1 m tiene un periodo de ~2 s, ¡independiente de la masa!' },
+    { icon: '🔬', text: 'La constante de Planck se descubrió estudiando osciladores armónicos cuánticos.' },
+    { icon: '🏗️', text: 'El Puente de Tacoma colapsó en 1940 por resonancia con el viento — un fenómeno oscilatorio.' },
+    { icon: '❤️', text: 'Tu corazón es un oscilador biológico que late ~100,000 veces al día.' },
+    { icon: '🎵', text: 'La nota "La" de afinación es una onda de exactamente 440 Hz, un MAS perfecto.' },
+    { icon: '🚀', text: 'Los relojes atómicos usan oscilaciones del cesio-133: 9,192,631,770 ciclos/segundo.' },
+    { icon: '📐', text: 'En el MAS, velocidad y aceleración están desfasadas 90° y 180° respecto a la posición.' },
+    { icon: '🌙', text: 'Las mareas son oscilaciones causadas por la atracción gravitacional de la Luna y el Sol.' },
+    { icon: '💡', text: 'La energía mecánica total en un MAS es E = ½kA², constante si no hay fricción.' },
+    { icon: '🎻', text: 'Un diapasón produce las ondas más puras (senoidales): ¡es el MAS perfecto del mundo real!' },
+    { icon: '🌐', text: 'Las ondas sísmicas P son longitudinales y las S transversales, ambas oscilatorias.' },
+    { icon: '⚡', text: 'Un circuito LC (inductor-capacitor) es el equivalente eléctrico del sistema masa-resorte.' },
+    { icon: '🔭', text: 'Foucault demostró la rotación terrestre con un péndulo de 67 m en París (1851).' },
+    { icon: '🧲', text: 'La frecuencia angular ω = 2π/T conecta el MAS con el movimiento circular uniforme.' },
+    { icon: '🏔️', text: 'Un péndulo oscila más lento en la cima de una montaña porque g es menor allí.' }
+];
+
+let tipTimerId = null;
+let lastTipIndex = -1;
+
+function getRandomTip() {
+    let idx;
+    do {
+        idx = Math.floor(Math.random() * PHYSICS_TIPS.length);
+    } while (idx === lastTipIndex && PHYSICS_TIPS.length > 1);
+    lastTipIndex = idx;
+    return PHYSICS_TIPS[idx];
+}
+
+function showTipBubble() {
+    // No mostrar tip si el chat está abierto
+    if (chatState.isOpen) return;
+
+    const fab = document.getElementById('chatbot-fab');
+    if (!fab) return;
+
+    // Eliminar bubble anterior si existe
+    const oldBubble = document.getElementById('chatbot-tip-bubble');
+    if (oldBubble) oldBubble.remove();
+
+    const tip = getRandomTip();
+    const bubble = document.createElement('div');
+    bubble.id = 'chatbot-tip-bubble';
+    bubble.className = 'chatbot-tip-bubble';
+    bubble.innerHTML = `
+        <span class="chatbot-tip-icon">${tip.icon}</span>
+        <span class="chatbot-tip-text">${tip.text}</span>
+        <button class="chatbot-tip-close" aria-label="Cerrar tip">&times;</button>
+    `;
+    document.body.appendChild(bubble);
+
+    // Posicionar respecto al FAB
+    positionTipBubble(bubble, fab);
+
+    // Cerrar al hacer click en X
+    bubble.querySelector('.chatbot-tip-close').addEventListener('click', (e) => {
+        e.stopPropagation();
+        bubble.classList.add('chatbot-tip-hide');
+        setTimeout(() => bubble.remove(), 300);
+    });
+
+    // Auto-cerrar tras 8 segundos
+    setTimeout(() => {
+        if (bubble.parentElement) {
+            bubble.classList.add('chatbot-tip-hide');
+            setTimeout(() => bubble.remove(), 300);
+        }
+    }, 8000);
+}
+
+function positionTipBubble(bubble, fab) {
+    const fabRect = fab.getBoundingClientRect();
+    bubble.style.left = `${fabRect.left}px`;
+    bubble.style.bottom = `${window.innerHeight - fabRect.top + 10}px`;
+}
+
+function startTipTimer() {
+    stopTipTimer();
+    const delay = CHATBOT_CONFIG.tipIntervalMin +
+        Math.random() * (CHATBOT_CONFIG.tipIntervalMax - CHATBOT_CONFIG.tipIntervalMin);
+    tipTimerId = setTimeout(() => {
+        showTipBubble();
+        startTipTimer(); // Reprogramar siguiente
+    }, delay);
+}
+
+function stopTipTimer() {
+    if (tipTimerId) {
+        clearTimeout(tipTimerId);
+        tipTimerId = null;
+    }
+}
+
+// ════════════════════════════════════════════
 // 3. ESTADO DEL CHATBOT
 // ════════════════════════════════════════════
 // Para evitar que inicie con una API Key previa, la borramos del caché al iniciar.
@@ -125,14 +229,15 @@ function createChatbotDOM() {
     fab.id = 'chatbot-fab';
     fab.className = 'chatbot-fab';
     fab.setAttribute('aria-label', 'Abrir asistente de Física 3');
-    fab.title = 'Asistente PhysBot';
+    fab.title = 'Asistente PhysBot — Arrastra para mover';
     fab.innerHTML = `
     <span class="chatbot-fab-icon">
       <i class="fa-solid fa-user-astronaut fa-bounce" style="--fa-animation-duration: 3s; --fa-bounce-jump-scale-x: 1; --fa-bounce-jump-scale-y: 1;"></i>
     </span>
     <span class="chatbot-fab-pulse"></span>
   `;
-    fab.addEventListener('click', toggleChatbot);
+    // Click se maneja dentro de makeFabDraggable para distinguir drag de click
+    makeFabDraggable(fab);
 
     // Panel del chatbot
     const panel = document.createElement('div');
@@ -209,6 +314,9 @@ function createChatbotDOM() {
 
     // Hacer arrastrable el panel
     makeDraggable(panel, panel.querySelector('.chatbot-header'));
+
+    // Iniciar el timer de tips
+    startTipTimer();
 
     // Event listeners
     document.getElementById('chatbot-close').addEventListener('click', toggleChatbot);
@@ -290,6 +398,124 @@ function makeDraggable(panel, header) {
 }
 
 // ════════════════════════════════════════════
+// 4.5 FAB ARRASTRABLE
+// ════════════════════════════════════════════
+function makeFabDraggable(fab) {
+    let isDragging = false;
+    let wasDragged = false;
+    let startX, startY;
+    let fabX, fabY;
+    const DRAG_THRESHOLD = 5; // px mínimos para considerar drag
+
+    // Guardar posición inicial del FAB
+    function getInitialPos() {
+        const rect = fab.getBoundingClientRect();
+        return { x: rect.left, y: rect.top };
+    }
+
+    // --- MOUSE ---
+    fab.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        wasDragged = false;
+        startX = e.clientX;
+        startY = e.clientY;
+        const pos = getInitialPos();
+        fabX = pos.x;
+        fabY = pos.y;
+        fab.style.transition = 'none';
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+
+        if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
+            wasDragged = true;
+        }
+
+        const newX = fabX + dx;
+        const newY = fabY + dy;
+
+        // Limitar dentro del viewport
+        const maxX = window.innerWidth - fab.offsetWidth;
+        const maxY = window.innerHeight - fab.offsetHeight;
+        const clampedX = Math.max(0, Math.min(newX, maxX));
+        const clampedY = Math.max(0, Math.min(newY, maxY));
+
+        fab.style.left = `${clampedX}px`;
+        fab.style.top = `${clampedY}px`;
+        fab.style.bottom = 'auto';
+        fab.style.right = 'auto';
+
+        // Reposicionar tip bubble si visible
+        const tipBubble = document.getElementById('chatbot-tip-bubble');
+        if (tipBubble) positionTipBubble(tipBubble, fab);
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        fab.style.transition = 'transform 0.2s ease, box-shadow 0.3s ease';
+
+        if (!wasDragged) {
+            toggleChatbot();
+        }
+    });
+
+    // --- TOUCH ---
+    fab.addEventListener('touchstart', (e) => {
+        isDragging = true;
+        wasDragged = false;
+        const touch = e.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        const pos = getInitialPos();
+        fabX = pos.x;
+        fabY = pos.y;
+        fab.style.transition = 'none';
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        const touch = e.touches[0];
+        const dx = touch.clientX - startX;
+        const dy = touch.clientY - startY;
+
+        if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
+            wasDragged = true;
+        }
+
+        const newX = fabX + dx;
+        const newY = fabY + dy;
+
+        const maxX = window.innerWidth - fab.offsetWidth;
+        const maxY = window.innerHeight - fab.offsetHeight;
+        const clampedX = Math.max(0, Math.min(newX, maxX));
+        const clampedY = Math.max(0, Math.min(newY, maxY));
+
+        fab.style.left = `${clampedX}px`;
+        fab.style.top = `${clampedY}px`;
+        fab.style.bottom = 'auto';
+        fab.style.right = 'auto';
+
+        const tipBubble = document.getElementById('chatbot-tip-bubble');
+        if (tipBubble) positionTipBubble(tipBubble, fab);
+    }, { passive: true });
+
+    document.addEventListener('touchend', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        fab.style.transition = 'transform 0.2s ease, box-shadow 0.3s ease';
+
+        if (!wasDragged) {
+            toggleChatbot();
+        }
+    });
+}
+
+// ════════════════════════════════════════════
 // 5. CONTROL DE UI
 // ════════════════════════════════════════════
 function toggleChatbot() {
@@ -300,6 +526,11 @@ function toggleChatbot() {
     if (chatState.isOpen) {
         panel.classList.add('active');
         fab.classList.add('active');
+
+        // Ocultar tip bubble al abrir chat
+        const tipBubble = document.getElementById('chatbot-tip-bubble');
+        if (tipBubble) tipBubble.remove();
+        stopTipTimer();
 
         // Si no hay api key, mostrar setup
         if (!chatState.apiKey) {
@@ -324,6 +555,8 @@ Puedo ayudarte a:
     } else {
         panel.classList.remove('active');
         fab.classList.remove('active');
+        // Reanudar tips al cerrar chat
+        startTipTimer();
     }
 }
 
