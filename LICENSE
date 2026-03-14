@@ -1,0 +1,231 @@
+LICENCIA DE USO — CUADERNO INTERACTIVO MOVIMIENTO OSCILATORIO
+Creative Commons Atribución-NoComercial-CompartirIgual 4.0 Internacional
+(CC BY-NC-SA 4.0)
+
+================================================================================
+AVISO DE DERECHOS DE AUTOR / COPYRIGHT NOTICE
+================================================================================
+
+Copyright (c) 2025 Miguel Ángel Delgado Acevedo & Andrés Felipe Bernal
+Universidad Tecnológica de Pereira — Colombia
+Todos los derechos de autoría reservados.
+
+Este proyecto fue desarrollado como cuaderno interactivo educativo sobre
+Movimiento Oscilatorio para la clase de Física en la Universidad Tecnológica
+de Pereira (UTP), Colombia. Fue desarrollado con igual contribución por ambos
+coautores: Miguel Ángel Delgado Acevedo y Andrés Felipe Bernal.
+
+Parte del contenido fue asistido con herramientas de Inteligencia Artificial
+y la biblioteca Antigravity. La autoría intelectual, creativa y académica
+recae íntegramente en los autores humanos declarados, quienes dirigieron,
+seleccionaron, integraron y validaron la totalidad del material.
+
+================================================================================
+MARCO LEGAL APLICABLE
+================================================================================
+
+Esta obra está protegida por:
+
+  - Ley 23 de 1982 (Colombia) — Sobre derechos de autor
+  - Ley 44 de 1993 (Colombia) — Modificatoria de la Ley 23 de 1982
+  - Decisión Andina 351 de 1993 — Régimen Común de Derechos de Autor
+    de la Comunidad Andina de Naciones (CAN)
+  - Convenio de Berna para la Protección de las Obras Literarias
+    y Artísticas (revisión de París, 1971)
+  - Acuerdo sobre los Aspectos de los Derechos de Propiedad Intelectual
+    relacionados con el Comercio (ADPIC / TRIPS), OMC
+  - Tratado de la OMPI sobre Derecho de Autor (WCT), 1996
+
+================================================================================
+TÉRMINOS DE LA LICENCIA CREATIVE COMMONS CC BY-NC-SA 4.0
+================================================================================
+
+Al ejercer los Derechos Licenciados (definidos a continuación), usted acepta
+y acuerda estar obligado por los términos y condiciones de esta Licencia
+Creative Commons Atribución-NoComercial-CompartirIgual 4.0 Internacional
+("Licencia Pública").
+
+--- SECCIÓN 1 — DEFINICIONES ---
+
+a. "Material con Licencia" significa la obra artística o literaria, base de
+   datos u otro material al que el Licenciante aplicó esta Licencia Pública.
+   En este caso: el Cuaderno Interactivo sobre Movimiento Oscilatorio,
+   incluyendo su código fuente, diseño, contenido y estructura pedagógica.
+
+b. "Derechos Licenciados" significa los derechos otorgados sujetos a los
+   términos y condiciones de esta Licencia Pública.
+
+c. "Licenciante" significa:
+      Miguel Ángel Delgado Acevedo
+      Andrés Felipe Bernal
+   (coautores con igual titularidad de derechos)
+
+d. "No Comercial" significa que no está principalmente destinado ni orientado
+   hacia ventajas comerciales o compensación monetaria.
+
+e. "Compartir" significa proporcionar material al público por cualquier medio
+   o proceso que requiera permiso bajo los Derechos Licenciados.
+
+--- SECCIÓN 2 — ALCANCE ---
+
+2.1 Concesión de licencia.
+
+Sujeto a los términos y condiciones de esta Licencia Pública, el Licenciante
+le otorga una licencia mundial, libre de regalías, no sublicenciable, no
+exclusiva e irrevocable para ejercer los Derechos Licenciados sobre el
+Material con Licencia para:
+
+  a. Reproducir y compartir el Material con Licencia, en todo o en parte,
+     sólo para propósitos No Comerciales; y
+
+  b. Producir, reproducir y compartir material adaptado sólo para propósitos
+     No Comerciales.
+
+2.2 Excepciones y Limitaciones.
+
+Para evitar dudas, los derechos de uso legítimo u otras excepciones y
+limitaciones aplicables a su uso no están sujetos a esta Licencia Pública.
+
+--- SECCIÓN 3 — CONDICIONES DE LA LICENCIA ---
+
+El ejercicio de los Derechos Licenciados está expresamente sujeto a las
+siguientes condiciones:
+
+3.1 ATRIBUCIÓN
+
+Si usted comparte el Material con Licencia (incluyendo en forma modificada),
+debe:
+
+  a. Conservar lo siguiente si es proporcionado por el Licenciante:
+       i.  identificación del(los) creador(es) del Material con Licencia:
+               Miguel Ángel Delgado Acevedo
+               Andrés Felipe Bernal
+       ii. un aviso de derechos de autor:
+               © 2025 Miguel Ángel Delgado Acevedo & Andrés Felipe Bernal
+       iii. un aviso que se refiera a esta Licencia Pública
+       iv.  un aviso que se refiera a la exención de garantías
+       v.   un URI o hipervínculo al Material con Licencia en la medida
+            en que sea razonablemente posible:
+               https://mangelxmada.github.io/Cuaderno-Movimiento-Oscilatorio/
+
+  b. Indicar si modificó el Material con Licencia y conservar una indicación
+     de las modificaciones anteriores.
+
+  c. Indicar que el Material con Licencia está licenciado bajo esta Licencia
+     Pública, e incluir el texto, el URI o el hipervínculo de esta Licencia.
+
+3.2 COMPARTIR IGUAL
+
+Además de las condiciones de la Sección 3.1, si usted comparte Material
+Adaptado que produzca, también se aplican las siguientes condiciones:
+
+  a. La Licencia del Adaptador que aplique debe ser una licencia de Creative
+     Commons con los mismos elementos de licencia, esta versión u otra
+     posterior, o una Licencia Compatible con BY-NC-SA.
+
+  b. Debe incluir el texto, URI o hipervínculo a la Licencia del Adaptador
+     que aplique.
+
+  c. No puede ofrecer ni imponer términos o condiciones adicionales o
+     diferentes sobre, ni aplicar medidas tecnológicas efectivas al Material
+     Adaptado que restrinjan el ejercicio de los derechos otorgados bajo la
+     Licencia del Adaptador que aplique.
+
+--- SECCIÓN 4 — DERECHOS DE BASE DE DATOS SUI GENERIS ---
+
+En caso de que los Derechos Licenciados incluyan Derechos de Base de Datos
+Sui Generis que apliquen a su uso del Material con Licencia:
+
+  a. Para evitar dudas, la Sección 2.1 le otorga el derecho de extraer,
+     reutilizar, reproducir y compartir todo o una parte sustancial de los
+     contenidos de la base de datos sólo para propósitos No Comerciales y
+     siempre que usted cumpla con las condiciones de la Sección 3.
+
+--- SECCIÓN 5 — EXENCIÓN DE GARANTÍAS Y LIMITACIÓN DE RESPONSABILIDAD ---
+
+5.1 A menos que el Licenciante lo asegure por separado, en la medida de lo
+posible, el Licenciante ofrece el Material con Licencia tal como es y tal
+como está disponible, y no hace representaciones o garantías de ningún tipo
+respecto al Material con Licencia.
+
+5.2 En la medida de lo posible, el Licenciante no será responsable ante usted
+bajo ninguna teoría legal (incluyendo, sin limitación, la negligencia) o de
+otra manera por cualquier pérdida, costo, gasto o daño directo, especial,
+indirecto, incidental, consecuente, punitivo, ejemplar, u otro que surja de
+esta Licencia Pública o del uso del Material con Licencia.
+
+--- SECCIÓN 6 — PLAZO Y TERMINACIÓN ---
+
+6.1 Esta Licencia Pública aplica durante el término de los derechos de autor
+y derechos similares licenciados aquí.
+
+6.2 Sus derechos bajo esta Licencia Pública terminan automáticamente si usted
+no cumple con sus términos y condiciones. Cuando su derecho a usar el Material
+con Licencia haya terminado, se restablecerá si el incumplimiento se subsana
+dentro de 30 días.
+
+--- SECCIÓN 7 — OTROS TÉRMINOS Y CONDICIONES ---
+
+7.1 El Licenciante no estará obligado por ningún término o condición adicional
+o diferente comunicado por usted a menos que se acuerde expresamente.
+
+================================================================================
+PROHIBICIONES EXPRESAS
+================================================================================
+
+Queda expresamente PROHIBIDO:
+
+  1. El uso de este material con fines comerciales de cualquier naturaleza
+     sin autorización escrita previa de AMBOS coautores.
+
+  2. Presentar este trabajo como propio (plagio) en cualquier contexto
+     académico, profesional o público.
+
+  3. Eliminar, ocultar o modificar los avisos de derechos de autor,
+     atribución o licencia.
+
+  4. Redistribuir versiones derivadas bajo términos más restrictivos
+     que los de esta licencia.
+
+  5. Usar el nombre de los autores o de la Universidad Tecnológica de
+     Pereira para endorsar o promocionar productos derivados sin
+     autorización expresa.
+
+================================================================================
+NOTA SOBRE INTELIGENCIA ARTIFICIAL Y HERRAMIENTAS EXTERNAS
+================================================================================
+
+Este proyecto incorporó el uso de:
+
+  - Herramientas de Inteligencia Artificial (IA) como asistencia en
+    redacción, revisión y desarrollo de contenido.
+  - Biblioteca Antigravity como herramienta técnica de desarrollo.
+
+Conforme al derecho de autor colombiano (Ley 23 de 1982) e internacional,
+las herramientas de IA y las bibliotecas de software de terceros NO son
+autoras ni cotitulares de derechos sobre esta obra. Su uso fue instrumental
+y asistencial. La titularidad de los derechos de autor corresponde
+exclusivamente a las personas naturales que ejercieron la dirección creativa,
+intelectual y académica del proyecto:
+
+      Miguel Ángel Delgado Acevedo
+      Andrés Felipe Bernal
+
+Las bibliotecas y herramientas de terceros utilizadas conservan sus propias
+licencias independientes, las cuales no se ven afectadas por esta licencia.
+
+================================================================================
+TEXTO COMPLETO DE LA LICENCIA
+================================================================================
+
+El texto legal completo y oficial de la licencia Creative Commons
+CC BY-NC-SA 4.0 en español se encuentra disponible en:
+
+  https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.es
+
+================================================================================
+
+© 2025 Miguel Ángel Delgado Acevedo & Andrés Felipe Bernal
+Universidad Tecnológica de Pereira — Pereira, Risaralda, Colombia
+
+"La educación es el arma más poderosa que puedes usar para cambiar el mundo."
