@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔬 Diagnóstico Gemini API</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; padding: 20px; min-height: 100vh; }
+        h1 { text-align: center; margin-bottom: 20px; color: #818cf8; }
+        .card { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid #334155; }
+        .input-row { display: flex; gap: 10px; margin-bottom: 20px; }
+        input { flex: 1; padding: 12px 16px; border-radius: 8px; border: 2px solid #334155; background: #0f172a; color: #e2e8f0; font-size: 14px; font-family: monospace; }
+        input:focus { border-color: #818cf8; outline: none; }
+        button { padding: 12px 24px; border-radius: 8px; border: none; background: #6366f1; color: white; font-size: 14px; font-weight: 700; cursor: pointer; }
+        button:hover { background: #4f46e5; }
+        button:disabled { opacity: .5; cursor: not-allowed; }
+        .model-row { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; margin: 6px 0; background: #0f172a; }
+        .status { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+        .pending { background: #334155; }
+        .testing { background: #f59e0b33; animation: pulse 1s ease infinite; }
+        .success { background: #22c55e33; }
+        .failed { background: #ef444433; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+        .model-name { font-weight: 600; font-size: 14px; flex: 1; }
+        .model-detail { font-size: 11px; color: #94a3b8; max-width: 60%; word-break: break-all; }
+        .model-time { font-size: 11px; color: #64748b; min-width: 50px; text-align: right; }
+        #log { background: #0f172a; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; white-space: pre-wrap; line-height: 1.6; margin-top: 12px; border: 1px solid #1e293b; }
+        .log-ok { color: #4ade80; }
+        .log-err { color: #f87171; }
+        .log-warn { color: #fbbf24; }
+        .log-info { color: #60a5fa; }
+        .winner { background: #22c55e15; border: 2px solid #22c55e; }
+        .winner .model-name { color: #4ade80; }
+        h3 { color: #94a3b8; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        #result { margin-top: 16px; padding: 16px; border-radius: 8px; display: none; }
+        #result.show { display: block; }
+        #result.ok { background: #22c55e15; border: 1px solid #22c55e; }
+        #result.fail { background: #ef444415; border: 1px solid #ef4444; }
+        #result h2 { font-size: 18px; margin-bottom: 8px; }
+        #result p { font-size: 13px; line-height: 1.6; }
+        code { background: #334155; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>🔬 Diagnóstico Gemini API</h1>
+    
+    <div class="card">
+        <h3>🔑 Tu API Key</h3>
+        <div class="input-row">
+            <input id="key" type="text" placeholder="AIzaSy..." />
+            <button id="btn" onclick="runDiag()">🚀 Diagnosticar</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>📡 Modelos a probar</h3>
+        <div id="models"></div>
+    </div>
+
+    <div class="card" id="result"></div>
+
+    <div class="card">
+        <h3>📋 Log detallado</h3>
+        <div id="log"></div>
+    </div>
+
+<script>
+const MODELS = [
+    'gemini-2.5-flash',
+    'gemini-flash',
+    'gemini-2.5-flash-preview-09-2025',
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-lite',
+    'gemini-pro',
+];
+
+// Build UI
+const modelsDiv = document.getElementById('models');
+MODELS.forEach((m, i) => {
+    modelsDiv.innerHTML += `
+    <div class="model-row" id="row-${i}">
+        <div class="status pending" id="st-${i}">⏳</div>
+        <div class="model-name" id="nm-${i}">${m}</div>
+        <div class="model-detail" id="dt-${i}">Pendiente</div>
+        <div class="model-time" id="tm-${i}">—</div>
+    </div>`;
+});
+
+// Try loading saved key
+const savedKey = localStorage.getItem('pg_apiKey') || localStorage.getItem('gemini_api_key') || localStorage.getItem('gemini_key') || localStorage.getItem('geminiApiKey') || '';
+if (savedKey) document.getElementById('key').value = savedKey;
+
+function log(msg, cls = '') {
+    const el = document.getElementById('log');
+    const time = new Date().toLocaleTimeString();
+    el.innerHTML += `<span class="${cls}">[${time}] ${msg}</span>\n`;
+    el.scrollTop = el.scrollHeight;
+}
+
+async function testModel(model, key, index) {
+    const st = document.getElementById('st-' + index);
+    const dt = document.getElementById('dt-' + index);
+    const tm = document.getElementById('tm-' + index);
+    const row = document.getElementById('row-' + index);
+    
+    st.className = 'status testing'; st.textContent = '🔄';
+    dt.textContent = 'Probando...';
+    log(`Probando modelo: ${model}...`, 'log-info');
+    
+    const t0 = performance.now();
+    
+    try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: 'Responde solo: HOLA MUNDO' }] }],
+                generationConfig: { maxOutputTokens: 50 }
+            })
+        });
+        
+        const elapsed = Math.round(performance.now() - t0);
+        tm.textContent = elapsed + 'ms';
+        
+        const data = await res.json();
+        
+        if (data.error) {
+            st.className = 'status failed'; st.textContent = '❌';
+            dt.textContent = data.error.message.substring(0, 80);
+            log(`❌ ${model}: ${data.error.message}`, 'log-err');
+            return { ok: false, error: data.error.message, code: data.error.code };
+        }
+        
+        if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+            const text = data.candidates[0].content.parts[0].text.trim();
+            st.className = 'status success'; st.textContent = '✅';
+            dt.textContent = '✅ Respuesta: "' + text.substring(0, 50) + '"';
+            row.classList.add('winner');
+            log(`✅ ${model}: FUNCIONA → "${text}"`, 'log-ok');
+            return { ok: true, text, model, time: elapsed };
+        }
+        
+        st.className = 'status failed'; st.textContent = '⚠️';
+        dt.textContent = 'Respuesta vacía o bloqueada';
+        log(`⚠️ ${model}: Respuesta vacía. finishReason: ${data.candidates?.[0]?.finishReason || 'N/A'}`, 'log-warn');
+        return { ok: false, error: 'empty' };
+        
+    } catch (err) {
+        const elapsed = Math.round(performance.now() - t0);
+        tm.textContent = elapsed + 'ms';
+        st.className = 'status failed'; st.textContent = '❌';
+        dt.textContent = 'Error de red: ' + err.message;
+        log(`❌ ${model}: Error de red - ${err.message}`, 'log-err');
+        return { ok: false, error: err.message };
+    }
+}
+
+async function runDiag() {
+    const key = document.getElementById('key').value.trim();
+    if (!key) { alert('Ingresa tu API Key'); return; }
+    
+    const btn = document.getElementById('btn');
+    btn.disabled = true; btn.textContent = '⏳ Diagnosticando...';
+    
+    document.getElementById('log').innerHTML = '';
+    document.getElementById('result').className = 'card'; document.getElementById('result').style.display = 'none';
+    
+    // Reset all rows
+    MODELS.forEach((m, i) => {
+        document.getElementById('st-' + i).className = 'status pending';
+        document.getElementById('st-' + i).textContent = '⏳';
+        document.getElementById('dt-' + i).textContent = 'Pendiente';
+        document.getElementById('tm-' + i).textContent = '—';
+        document.getElementById('row-' + i).classList.remove('winner');
+    });
+    
+    log('🔬 Iniciando diagnóstico con ' + MODELS.length + ' modelos...', 'log-info');
+    log('🔑 API Key: ' + key.substring(0, 8) + '...' + key.substring(key.length - 4), 'log-info');
+    
+    let winners = [];
+    
+    for (let i = 0; i < MODELS.length; i++) {
+        const result = await testModel(MODELS[i], key, i);
+        if (result.ok) winners.push(result);
+        // Pequeña pausa entre requests para no triggear rate limit
+        if (i < MODELS.length - 1) await new Promise(r => setTimeout(r, 500));
+    }
+    
+    const resultDiv = document.getElementById('result');
+    resultDiv.style.display = 'block';
+    
+    if (winners.length > 0) {
+        resultDiv.className = 'card show ok';
+        const best = winners[0];
+        resultDiv.innerHTML = `
+            <h2>✅ ¡Diagnóstico exitoso!</h2>
+            <p><strong>${winners.length} modelo(s) funcionan</strong> con tu API Key.</p>
+            <p>Mejor modelo: <code>${best.model}</code> (${best.time}ms)</p>
+            <p style="margin-top:10px">Respuesta: "${best.text}"</p>
+            <p style="margin-top:12px;color:#94a3b8">
+                <strong>Modelos funcionales:</strong> ${winners.map(w => '<code>' + w.model + '</code>').join(', ')}
+            </p>
+            <p style="margin-top:12px;color:#fbbf24">
+                📋 <strong>Acción:</strong> Copia el nombre del modelo que funciona y reporta al profesor Néstor.
+            </p>
+        `;
+        log(`\n🏆 RESULTADO: ${winners.length} modelos funcionan. Mejor: ${best.model}`, 'log-ok');
+    } else {
+        resultDiv.className = 'card show fail';
+        resultDiv.innerHTML = `
+            <h2>❌ Ningún modelo respondió</h2>
+            <p>Tu API Key no funcionó con ninguno de los ${MODELS.length} modelos probados.</p>
+            <p style="margin-top:10px">Posibles causas:</p>
+            <p>• La API Key es inválida o fue revocada</p>
+            <p>• El servicio de Gemini está caído temporalmente</p>
+            <p>• Se excedió la cuota gratuita del día</p>
+            <p style="margin-top:12px;color:#fbbf24">
+                📋 <strong>Acción:</strong> Ve a <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#818cf8">Google AI Studio</a> y genera una nueva API Key.
+            </p>
+        `;
+        log(`\n❌ RESULTADO: Ningún modelo funciona con esta key.`, 'log-err');
+    }
+    
+    btn.disabled = false; btn.textContent = '🚀 Diagnosticar';
+}
+</script>
+</body>
+</html>
