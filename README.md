@@ -112,4 +112,4 @@ Este cuaderno fue creado como proyecto para la **clase de Física** en la **Univ
 ---
 
 *Desarrollado con 💡 esfuerzo, dedicación y pasión por la física.*  
-*Universidad Tecnológica de Pereira — Colombia, 2025*
+*Universidad Tecnológica de Pereira — Colombia, 2026*
